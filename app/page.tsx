@@ -542,17 +542,17 @@ export default function Home() {
           </div>
         </section>
         {/* 9. サービス詳細③ - Operation / Team Support */}
-        <section id="page-8" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
+        <section id="page-8" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '60px 40px' }}>
           <CornerBoxes />
           <div style={{ maxWidth: '1200px', width: '100%' }}>
             <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'var(--forest-green)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold', margin: '0 auto 20px' }}>3</div>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '10px' }}>Operation / Team Support</h2>
             <GoldUnderline />
 
-            <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px' }}>
+            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
               <div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>提供フローと動線の最適化</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '20px' }}>提供フローと動線の最適化</h3>
+                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {[
                     '営業中の立ち位置・動き方の整理',
                     'ピーク時に対応できる動線と配置の設計',
@@ -567,19 +567,19 @@ export default function Home() {
                   ))}
                 </ul>
 
-                <div style={{ marginTop: '30px', background: 'var(--beige-dark)', padding: '25px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)' }}>
+                <div style={{ marginTop: '20px', background: 'var(--beige-dark)', padding: '20px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
+                  <p style={{ fontSize: '0.9rem', lineHeight: '1.8', color: 'var(--text-dark)' }}>
                     現場の動きをシンプルに整え、最小の動きで最大の成果が出るオペレーションをつくります。
                   </p>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', marginTop: '10px' }}>
+                  <p style={{ fontSize: '0.9rem', lineHeight: '1.8', color: 'var(--text-dark)', marginTop: '10px' }}>
                     ムダのない流れが生まれることで、チーム全体が落ち着いて働ける環境が整います。
                   </p>
                 </div>
               </div>
 
               <div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>負担の偏りを防ぐ仕組み</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '20px' }}>負担の偏りを防ぐ仕組み</h3>
+                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {[
                     '役割・担当・作業手順の明確化',
                     '適切な予約数・席数の管理',
@@ -593,8 +593,8 @@ export default function Home() {
                   ))}
                 </ul>
 
-                <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginTop: '35px', marginBottom: '25px' }}>品質の再現性をつくる</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginTop: '25px', marginBottom: '20px' }}>品質の再現性をつくる</h3>
+                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {[
                     'スタッフの能力差に左右されない接客基準づくり',
                     '新人が迷わない育成ステップの明確化（マニュアル整備）',
@@ -609,11 +609,11 @@ export default function Home() {
               </div>
             </div>
 
-            <div style={{ marginTop: '40px', background: 'rgba(255, 255, 255, 0.7)', padding: '30px', borderRadius: '12px', border: '2px solid var(--gold)', borderLeft: '4px solid var(--forest-green)' }}>
-              <p style={{ fontSize: '0.95rem', lineHeight: '1.9', color: 'var(--text-dark)', fontWeight: '600' }}>
+            <div style={{ marginTop: '30px', background: 'rgba(255, 255, 255, 0.7)', padding: '24px', borderRadius: '12px', border: '2px solid var(--gold)', borderLeft: '4px solid var(--forest-green)' }}>
+              <p style={{ fontSize: '0.95rem', lineHeight: '1.8', color: 'var(--text-dark)', fontWeight: '600' }}>
                 誰が入っても同じ"感じの良さ"が再現できる状態をつくります。
               </p>
-              <p style={{ fontSize: '0.95rem', lineHeight: '1.9', color: 'var(--text-dark)', marginTop: '10px' }}>
+              <p style={{ fontSize: '0.95rem', lineHeight: '1.8', color: 'var(--text-dark)', marginTop: '10px' }}>
                 属人化をなくし、店舗の世界観と品質を安定させるための基盤づくりです。
               </p>
             </div>
@@ -621,17 +621,17 @@ export default function Home() {
         </section>
 
         {/* 10. サービス詳細④ - Communication / Relationship */}
-        <section id="page-9" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
+        <section id="page-9" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '60px 40px' }}>
           <CornerBoxes />
           <div style={{ maxWidth: '1200px', width: '100%' }}>
             <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'var(--forest-green)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold', margin: '0 auto 20px' }}>4</div>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '10px' }}>Communication / Relationship</h2>
             <GoldUnderline />
 
-            <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px' }}>
+            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
               <div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>ゲストとの関係を育てる（リピーターづくり）</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '20px' }}>ゲストとの関係を育てる（リピーターづくり）</h3>
+                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {[
                     '予約〜来店〜退店後まで一貫した体験の流れをつくる',
                     '初来店・常連に合わせた声かけやご案内の工夫',
@@ -645,14 +645,14 @@ export default function Home() {
                   ))}
                 </ul>
 
-                <div style={{ marginTop: '25px', background: 'var(--beige-dark)', padding: '20px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
-                  <p style={{ fontSize: '0.85rem', lineHeight: '1.8', color: 'var(--text-dark)', fontStyle: 'italic' }}>
+                <div style={{ marginTop: '18px', background: 'var(--beige-dark)', padding: '16px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
+                  <p style={{ fontSize: '0.85rem', lineHeight: '1.7', color: 'var(--text-dark)', fontStyle: 'italic' }}>
                     初めての方にも常連の方にも、「また来たい」と思ってもらえる体験を整えます。
                   </p>
                 </div>
 
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginTop: '35px', marginBottom: '25px' }}>スタッフ間のコミュニケーション強化</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: '600', color: 'var(--forest-green)', marginTop: '28px', marginBottom: '20px' }}>スタッフ間のコミュニケーション強化</h3>
+                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {[
                     '言葉遣い・トーンの統一',
                     '引き継ぎや共有の仕組みづくり',
@@ -666,16 +666,16 @@ export default function Home() {
                   ))}
                 </ul>
 
-                <div style={{ marginTop: '20px', background: 'var(--beige-dark)', padding: '20px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
-                  <p style={{ fontSize: '0.85rem', lineHeight: '1.8', color: 'var(--text-dark)', fontStyle: 'italic' }}>
+                <div style={{ marginTop: '16px', background: 'var(--beige-dark)', padding: '16px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
+                  <p style={{ fontSize: '0.85rem', lineHeight: '1.7', color: 'var(--text-dark)', fontStyle: 'italic' }}>
                     スタッフ同士の連携がスムーズになり、サービスの質が安定します。
                   </p>
                 </div>
               </div>
 
               <div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>生産者・地域とつながる関係性づくり</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '20px' }}>生産者・地域とつながる関係性づくり</h3>
+                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {[
                     '生産者のストーリーを自然に紹介できる仕組み',
                     '地域やコミュニティとの協働の土台づくり',
@@ -689,14 +689,14 @@ export default function Home() {
                   ))}
                 </ul>
 
-                <div style={{ marginTop: '25px', background: 'var(--beige-dark)', padding: '20px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
-                  <p style={{ fontSize: '0.85rem', lineHeight: '1.8', color: 'var(--text-dark)', fontStyle: 'italic' }}>
+                <div style={{ marginTop: '18px', background: 'var(--beige-dark)', padding: '16px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
+                  <p style={{ fontSize: '0.85rem', lineHeight: '1.7', color: 'var(--text-dark)', fontStyle: 'italic' }}>
                     "料理の背景" と "地域の力" が伝わり、店の価値が深まり続ける関係性をつくります。
                   </p>
                 </div>
 
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginTop: '35px', marginBottom: '25px' }}>背景を語れる店づくり（まとめ）</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: '600', color: 'var(--forest-green)', marginTop: '28px', marginBottom: '20px' }}>背景を語れる店づくり（まとめ）</h3>
+                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {[
                     '料理の背景・生産者の想いを言葉にする',
                     '地域とのつながりを見える形で発信する',
@@ -709,8 +709,8 @@ export default function Home() {
                   ))}
                 </ul>
 
-                <div style={{ marginTop: '25px', background: 'rgba(255, 255, 255, 0.9)', padding: '25px', borderRadius: '8px', border: '2px solid var(--gold)' }}>
-                  <p style={{ fontSize: '0.95rem', lineHeight: '1.8', color: 'var(--text-dark)', fontWeight: '600', textAlign: 'center' }}>
+                <div style={{ marginTop: '18px', background: 'rgba(255, 255, 255, 0.9)', padding: '20px', borderRadius: '8px', border: '2px solid var(--gold)' }}>
+                  <p style={{ fontSize: '0.95rem', lineHeight: '1.7', color: 'var(--text-dark)', fontWeight: '600', textAlign: 'center' }}>
                     店の個性と世界観が伝わり、ファンが育つ状態へ。
                   </p>
                 </div>
@@ -876,18 +876,18 @@ export default function Home() {
         </section>
 
         {/* 14. サービス事例・口コミ */}
-        <section id="page-13" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
+        <section id="page-13" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '60px 40px' }}>
           <CornerBoxes />
           <div style={{ maxWidth: '1300px', width: '100%' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>サービス事例・お客様の声</h2>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>サービス事例・お客様の声</h2>
             <GoldUnderline />
 
-            <div style={{ marginTop: '60px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '50px' }}>
+            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '35px' }}>
               {/* サービス事例 */}
               <div>
-                <h3 style={{ fontSize: '1.8rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '35px', textAlign: 'center', borderBottom: '3px solid var(--gold)', paddingBottom: '15px' }}>サービス事例</h3>
+                <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px', textAlign: 'center', borderBottom: '3px solid var(--gold)', paddingBottom: '12px' }}>サービス事例</h3>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {[
                     {
                       category: '高級レストラン',
@@ -908,11 +908,11 @@ export default function Home() {
                       tag: '開業支援'
                     }
                   ].map((item, index) => (
-                    <div key={index} style={{ background: 'white', padding: '25px', borderRadius: '12px', border: '2px solid rgba(61, 90, 60, 0.1)', position: 'relative' }}>
-                      <div style={{ position: 'absolute', top: '-12px', left: '20px', background: 'var(--forest-green)', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold' }}>{item.tag}</div>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: '8px', marginTop: '5px' }}>{item.category}</p>
-                      <h4 style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '12px', lineHeight: '1.5' }}>{item.title}</h4>
-                      <p style={{ fontSize: '0.9rem', color: 'var(--text-dark)', lineHeight: '1.8' }}>{item.desc}</p>
+                    <div key={index} style={{ background: 'white', padding: '20px', borderRadius: '12px', border: '2px solid rgba(61, 90, 60, 0.1)', position: 'relative' }}>
+                      <div style={{ position: 'absolute', top: '-12px', left: '20px', background: 'var(--forest-green)', color: 'white', padding: '4px 14px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 'bold' }}>{item.tag}</div>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-gray)', marginBottom: '6px', marginTop: '5px' }}>{item.category}</p>
+                      <h4 style={{ fontSize: '1.05rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '10px', lineHeight: '1.5' }}>{item.title}</h4>
+                      <p style={{ fontSize: '0.87rem', color: 'var(--text-dark)', lineHeight: '1.7' }}>{item.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -920,9 +920,9 @@ export default function Home() {
 
               {/* お客様の声 */}
               <div>
-                <h3 style={{ fontSize: '1.8rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '35px', textAlign: 'center', borderBottom: '3px solid var(--gold)', paddingBottom: '15px' }}>お客様の声</h3>
+                <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px', textAlign: 'center', borderBottom: '3px solid var(--gold)', paddingBottom: '12px' }}>お客様の声</h3>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                   {[
                     {
                       name: 'A様',
@@ -945,15 +945,15 @@ export default function Home() {
                       comment: 'サービスとキッチンの連携がうまくいかず悩んでいましたが、川畑さんの組織開発支援により、チーム全体の一体感が生まれました。今では互いをリスペクトし合える関係性が築けています。'
                     }
                   ].map((item, index) => (
-                    <div key={index} style={{ background: 'linear-gradient(135deg, rgba(248, 245, 242, 1) 0%, rgba(255, 255, 255, 1) 100%)', padding: '22px', borderRadius: '10px', border: '2px solid rgba(212, 163, 115, 0.3)', borderLeft: '4px solid var(--gold)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div key={index} style={{ background: 'linear-gradient(135deg, rgba(248, 245, 242, 1) 0%, rgba(255, 255, 255, 1) 100%)', padding: '18px', borderRadius: '10px', border: '2px solid rgba(212, 163, 115, 0.3)', borderLeft: '4px solid var(--gold)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <div>
-                          <p style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-dark)' }}>{item.name}</p>
-                          <p style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>{item.role}</p>
+                          <p style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-dark)' }}>{item.name}</p>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{item.role}</p>
                         </div>
-                        <div style={{ color: 'var(--gold)', fontSize: '1.5rem' }}>★★★★★</div>
+                        <div style={{ color: 'var(--gold)', fontSize: '1.3rem' }}>★★★★★</div>
                       </div>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-dark)', lineHeight: '1.8', fontStyle: 'italic' }}>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-dark)', lineHeight: '1.7', fontStyle: 'italic' }}>
                         "{item.comment}"
                       </p>
                     </div>
@@ -965,17 +965,17 @@ export default function Home() {
         </section>
 
         {/* 15. お問い合わせ */}
-        <section id="page-14" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px', overflowY: 'auto' }}>
+        <section id="page-14" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '60px 40px' }}>
           <CornerBoxes />
           <div style={{ maxWidth: '1200px', width: '100%' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>お問い合わせ</h2>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>お問い合わせ</h2>
             <GoldUnderline />
 
-            <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
               {/* お問い合わせフォーム */}
-              <div style={{ background: 'white', padding: '40px', borderRadius: '12px', border: '3px solid var(--gold)' }}>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px', textAlign: 'center' }}>お問い合わせフォーム</h3>
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ background: 'white', padding: '30px', borderRadius: '12px', border: '3px solid var(--gold)' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '20px', textAlign: 'center' }}>お問い合わせフォーム</h3>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '8px' }}>
                       お名前 <span style={{ color: 'red' }}>*</span>
@@ -987,7 +987,7 @@ export default function Home() {
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '12px 16px',
+                        padding: '10px 14px',
                         fontSize: '0.95rem',
                         border: '2px solid rgba(61, 90, 60, 0.2)',
                         borderRadius: '8px',
@@ -1010,7 +1010,7 @@ export default function Home() {
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '12px 16px',
+                        padding: '10px 14px',
                         fontSize: '0.95rem',
                         border: '2px solid rgba(61, 90, 60, 0.2)',
                         borderRadius: '8px',
@@ -1032,7 +1032,7 @@ export default function Home() {
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '12px 16px',
+                        padding: '10px 14px',
                         fontSize: '0.95rem',
                         border: '2px solid rgba(61, 90, 60, 0.2)',
                         borderRadius: '8px',
@@ -1052,10 +1052,10 @@ export default function Home() {
                       required
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      rows={6}
+                      rows={5}
                       style={{
                         width: '100%',
-                        padding: '12px 16px',
+                        padding: '10px 14px',
                         fontSize: '0.95rem',
                         border: '2px solid rgba(61, 90, 60, 0.2)',
                         borderRadius: '8px',
@@ -1073,8 +1073,8 @@ export default function Home() {
                     type="submit"
                     style={{
                       width: '100%',
-                      padding: '16px',
-                      fontSize: '1.1rem',
+                      padding: '14px',
+                      fontSize: '1.05rem',
                       fontWeight: '600',
                       color: 'white',
                       background: 'var(--gold)',
@@ -1082,7 +1082,7 @@ export default function Home() {
                       borderRadius: '8px',
                       cursor: 'pointer',
                       transition: 'all 0.3s ease',
-                      marginTop: '10px'
+                      marginTop: '6px'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = 'var(--gold-dark)';
@@ -1102,10 +1102,10 @@ export default function Home() {
 
               {/* 連絡先情報 */}
               <div>
-                <div style={{ background: 'white', padding: '40px', borderRadius: '12px', border: '3px solid var(--forest-green)', marginBottom: '30px' }}>
-                  <h3 style={{ fontSize: '1.6rem', textAlign: 'center', marginBottom: '10px', color: 'var(--forest-green)' }}>川畑 和弘</h3>
-                  <p style={{ textAlign: 'center', fontSize: '1rem', color: 'var(--text-gray)', marginBottom: '30px' }}>Service Hospitality Trainer</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '0.95rem' }}>
+                <div style={{ background: 'white', padding: '30px', borderRadius: '12px', border: '3px solid var(--forest-green)', marginBottom: '20px' }}>
+                  <h3 style={{ fontSize: '1.5rem', textAlign: 'center', marginBottom: '10px', color: 'var(--forest-green)' }}>川畑 和弘</h3>
+                  <p style={{ textAlign: 'center', fontSize: '1rem', color: 'var(--text-gray)', marginBottom: '20px' }}>Service Hospitality Trainer</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '0.95rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                       <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--forest-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <span style={{ fontSize: '1.2rem' }}>📱</span>
@@ -1136,7 +1136,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div style={{ background: 'rgba(255, 255, 255, 0.7)', padding: '30px', borderRadius: '12px', border: '2px solid var(--gold)', borderLeft: '4px solid var(--forest-green)' }}>
+                <div style={{ background: 'rgba(255, 255, 255, 0.7)', padding: '24px', borderRadius: '12px', border: '2px solid var(--gold)', borderLeft: '4px solid var(--forest-green)' }}>
                   <p style={{ fontSize: '0.95rem', textAlign: 'center', lineHeight: '1.8', color: 'var(--text-dark)' }}>
                     サービス向上や組織づくりに関するご相談は、どうぞ気軽にお声がけください。<br />
                     お店に寄り添いながら、より良い未来づくりをお手伝いいたします。
