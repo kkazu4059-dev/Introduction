@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // 装飾用のコーナーボックスコンポーネント（無効化）
 const CornerBoxes = () => null;
@@ -12,12 +12,26 @@ const GoldUnderline = () => (
 
 export default function Home() {
   const [currentPage, setCurrentPage] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     message: '',
   });
+
+  // ウィンドウサイズを検出してモバイル判定
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const pages = [
     'hero',
@@ -61,11 +75,33 @@ export default function Home() {
     <>
       {/* トップ固定ナビゲーション */}
       <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, background: 'rgba(248, 245, 242, 0.95)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(61, 90, 60, 0.1)' }}>
-        <nav style={{ maxWidth: '1400px', margin: '0 auto', padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--forest-green)', cursor: 'pointer' }} onClick={() => scrollToPage(0)}>
+        <nav style={{ maxWidth: '1400px', margin: '0 auto', padding: isMobile ? '15px 20px' : '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: isMobile ? '1.1rem' : '1.3rem', fontWeight: 'bold', color: 'var(--forest-green)', cursor: 'pointer' }} onClick={() => scrollToPage(0)}>
             川畑 和弘
           </div>
-          <ul style={{ display: 'flex', gap: '40px', listStyle: 'none', margin: 0, padding: 0, alignItems: 'center' }}>
+
+          {/* ハンバーガーメニューボタン（モバイル） */}
+          {isMobile && (
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '10px',
+                zIndex: 201
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <div style={{ width: '25px', height: '3px', background: 'var(--forest-green)', borderRadius: '2px', transition: 'all 0.3s', transform: isMenuOpen ? 'rotate(45deg) translateY(8px)' : 'none' }} />
+                <div style={{ width: '25px', height: '3px', background: 'var(--forest-green)', borderRadius: '2px', transition: 'all 0.3s', opacity: isMenuOpen ? 0 : 1 }} />
+                <div style={{ width: '25px', height: '3px', background: 'var(--forest-green)', borderRadius: '2px', transition: 'all 0.3s', transform: isMenuOpen ? 'rotate(-45deg) translateY(-8px)' : 'none' }} />
+              </div>
+            </button>
+          )}
+
+          {/* デスクトップメニュー */}
+          <ul style={{ display: isMobile ? 'none' : 'flex', gap: '40px', listStyle: 'none', margin: 0, padding: 0, alignItems: 'center' }}>
             {[
               { label: 'ビジョン', page: 1 },
               { label: 'プロフィール', page: 2 },
@@ -134,89 +170,142 @@ export default function Home() {
               </button>
             </li>
           </ul>
+
+          {/* モバイルメニュー */}
+          {isMobile && isMenuOpen && (
+            <div style={{
+              position: 'fixed',
+              top: '60px',
+              left: 0,
+              right: 0,
+              background: 'var(--beige)',
+              borderBottom: '2px solid var(--forest-green)',
+              padding: '20px',
+              zIndex: 199,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}>
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {[
+                  { label: 'ビジョン', page: 1 },
+                  { label: 'プロフィール', page: 2 },
+                  { label: 'サービス', page: 5 },
+                  { label: '実施プロセス', page: 10 },
+                  { label: '実績・事例', page: 13 }
+                ].map((item, index) => (
+                  <li key={index}>
+                    <button
+                      onClick={() => {
+                        scrollToPage(item.page);
+                        setIsMenuOpen(false);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '1rem',
+                        color: 'var(--text-dark)',
+                        cursor: 'pointer',
+                        fontWeight: '500',
+                        padding: '12px',
+                        width: '100%',
+                        textAlign: 'left',
+                        borderBottom: '1px solid rgba(61, 90, 60, 0.1)'
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  </li>
+                ))}
+                <li>
+                  <button
+                    onClick={() => {
+                      scrollToPage(14);
+                      setIsMenuOpen(false);
+                    }}
+                    style={{
+                      background: 'var(--gold)',
+                      border: 'none',
+                      fontSize: '1rem',
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      width: '100%',
+                      marginTop: '10px'
+                    }}
+                  >
+                    ✉ お問い合わせ
+                  </button>
+                </li>
+              </ul>
+            </div>
+          )}
         </nav>
       </header>
-
-      {/* サイドナビゲーション */}
-      <nav style={{ position: 'fixed', right: '40px', top: '50%', transform: 'translateY(-50%)', zIndex: 100, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {pages.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => scrollToPage(index)}
-            style={{
-              width: currentPage === index ? '40px' : '12px',
-              height: '12px',
-              borderRadius: '6px',
-              border: 'none',
-              background: currentPage === index ? 'var(--gold)' : 'var(--forest-green)',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              opacity: currentPage === index ? 1 : 0.5
-            }}
-            aria-label={`ページ${index + 1}へ移動`}
-          />
-        ))}
-      </nav>
 
       <main>
         {/* 1. ヒーローページ */}
         <section id="page-0" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)' }}>
           <CornerBoxes />
-          <div style={{ textAlign: 'center', maxWidth: '900px', padding: '0 40px', position: 'relative', zIndex: 1 }}>
-            <div style={{ position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)', width: '2px', height: '80px', background: 'var(--forest-green)' }} />
-            <h1 style={{ fontSize: '3.5rem', fontWeight: 'bold', color: 'var(--text-dark)', marginBottom: '30px', letterSpacing: '0.05em' }}>
+          <div style={{ textAlign: 'center', maxWidth: '900px', padding: isMobile ? '0 20px' : '0 40px', position: 'relative', zIndex: 1 }}>
+            <div style={{ position: 'absolute', top: isMobile ? '-60px' : '-100px', left: '50%', transform: 'translateX(-50%)', width: '2px', height: isMobile ? '50px' : '80px', background: 'var(--forest-green)' }} />
+            <h1 style={{ fontSize: isMobile ? '1.8rem' : '3.5rem', fontWeight: 'bold', color: 'var(--text-dark)', marginBottom: isMobile ? '20px' : '30px', letterSpacing: '0.05em' }}>
               Service Hospitality Trainer
             </h1>
             <GoldUnderline />
-            <h2 style={{ fontSize: '2.5rem', color: 'var(--forest-green)', margin: '40px 0 30px', letterSpacing: '0.1em' }}>
+            <h2 style={{ fontSize: isMobile ? '1.6rem' : '2.5rem', color: 'var(--forest-green)', margin: isMobile ? '25px 0 20px' : '40px 0 30px', letterSpacing: '0.1em' }}>
 川畑 和弘
             </h2>
-            <p style={{ fontSize: '1.3rem', fontStyle: 'italic', color: 'var(--text-gray)', marginBottom: '40px' }}>
+            <p style={{ fontSize: isMobile ? '1rem' : '1.3rem', fontStyle: 'italic', color: 'var(--text-gray)', marginBottom: isMobile ? '25px' : '40px' }}>
               Delighting People, Cultivating the Future.
             </p>
-            <p style={{ fontSize: '1rem', color: 'var(--text-dark)', marginBottom: '15px', lineHeight: '1.8' }}>
+            <p style={{ fontSize: isMobile ? '0.85rem' : '1rem', color: 'var(--text-dark)', marginBottom: '15px', lineHeight: '1.8' }}>
               接客コーチング / ホスピタリーマネジメント / レストラン・ホテル開業サポート / 組織開発
             </p>
-            <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-dark)', fontStyle: 'italic' }}>
+            <p style={{ fontSize: isMobile ? '0.85rem' : '0.95rem', fontWeight: 600, color: 'var(--text-dark)', fontStyle: 'italic' }}>
               お店の想いに寄り添い、心地よいサービス体験を丁寧に設計いたします。
             </p>
           </div>
-          {/* ゴールドの曲線装飾 */}
-          <div style={{ position: 'absolute', top: '60px', right: '180px', width: '300px', height: '300px', border: '2px solid var(--gold)', borderRadius: '50%', borderLeft: 'none', borderBottom: 'none' }} />
-          <div style={{ position: 'absolute', bottom: '60px', left: '40px', width: '200px', height: '200px', border: '2px solid var(--gold)', borderRadius: '50%', borderRight: 'none', borderTop: 'none' }} />
+          {/* ゴールドの曲線装飾（デスクトップのみ） */}
+          {!isMobile && (
+            <>
+              <div style={{ position: 'absolute', top: '60px', right: '180px', width: '300px', height: '300px', border: '2px solid var(--gold)', borderRadius: '50%', borderLeft: 'none', borderBottom: 'none' }} />
+              <div style={{ position: 'absolute', bottom: '60px', left: '40px', width: '200px', height: '200px', border: '2px solid var(--gold)', borderRadius: '50%', borderRight: 'none', borderTop: 'none' }} />
+            </>
+          )}
         </section>
 
         {/* 2. Vision / Mission / Value */}
-        <section id="page-1" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
+        <section id="page-1" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: isMobile ? '60px 20px' : '80px 60px' }}>
           <CornerBoxes />
           <div style={{ maxWidth: '1200px', width: '100%' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>Vision / Mission / Value</h2>
+            <h2 style={{ fontSize: isMobile ? '2rem' : '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>Vision / Mission / Value</h2>
             <GoldUnderline />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '60px', marginTop: '80px' }}>
-              <div style={{ textAlign: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '40px' : '60px', marginTop: isMobile ? '40px' : '80px' }}>
+              <div style={{ textAlign: 'center', borderBottom: isMobile ? '1px solid #ccc' : 'none', paddingBottom: isMobile ? '30px' : '0' }}>
                 <div style={{ width: '80px', height: '3px', background: 'var(--gold)', margin: '0 auto 30px' }} />
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>Vision（ビジョン）</h3>
-                <p style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '25px', lineHeight: '1.8' }}>
+                <h3 style={{ fontSize: isMobile ? '1.3rem' : '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>Vision（ビジョン）</h3>
+                <p style={{ fontSize: isMobile ? '1rem' : '1.1rem', fontWeight: '600', marginBottom: '25px', lineHeight: '1.8' }}>
                   「人が人を喜ばせることで、<br />幸せが循環する社会を。」
                 </p>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-gray)', lineHeight: '1.9' }}>
+                <p style={{ fontSize: isMobile ? '0.85rem' : '0.9rem', color: 'var(--text-gray)', lineHeight: '1.9' }}>
                   おもてなしの力で、人の心がつながり、思いやりの連鎖が生まれる。その連鎖が、地域や社会の豊かさへと広がっていく未来を目指す。
                 </p>
               </div>
-              <div style={{ textAlign: 'center', borderLeft: '1px solid #ccc', borderRight: '1px solid #ccc' }}>
+              <div style={{ textAlign: 'center', borderLeft: isMobile ? 'none' : '1px solid #ccc', borderRight: isMobile ? 'none' : '1px solid #ccc', borderBottom: isMobile ? '1px solid #ccc' : 'none', paddingBottom: isMobile ? '30px' : '0' }}>
                 <div style={{ width: '80px', height: '3px', background: 'var(--gold)', margin: '0 auto 30px' }} />
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>Mission（ミッション）</h3>
-                <p style={{ fontSize: '1.05rem', fontWeight: '600', marginBottom: '25px', lineHeight: '1.8' }}>
+                <h3 style={{ fontSize: isMobile ? '1.3rem' : '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>Mission（ミッション）</h3>
+                <p style={{ fontSize: isMobile ? '0.95rem' : '1.05rem', fontWeight: '600', marginBottom: '25px', lineHeight: '1.8' }}>
                   プロのサービスマンとして、<br />人を喜ばせる体験を通じて、<br />サービス業の価値と地位を高める。
                 </p>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-gray)', lineHeight: '1.9' }}>
+                <p style={{ fontSize: isMobile ? '0.85rem' : '0.9rem', color: 'var(--text-gray)', lineHeight: '1.9' }}>
                   生産者、ゲスト、そして地域がそれぞれの立場で幸せを感じられるように。"歓び"を軸に、人と社会の関係性をより良い形にデザインする。
                 </p>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ width: '80px', height: '3px', background: 'var(--gold)', margin: '0 auto 30px' }} />
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>Value（バリュー）</h3>
-                <ul style={{ textAlign: 'left', fontSize: '0.9rem', color: 'var(--text-dark)', lineHeight: '2.2' }}>
+                <h3 style={{ fontSize: isMobile ? '1.3rem' : '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>Value（バリュー）</h3>
+                <ul style={{ textAlign: 'left', fontSize: isMobile ? '0.85rem' : '0.9rem', color: 'var(--text-dark)', lineHeight: '2.2' }}>
                   <li style={{ marginBottom: '15px' }}>
                     <strong>感謝と敬意</strong> – 人とのつながりに感謝し、相手への敬意を忘れない。
                   </li>
@@ -233,20 +322,20 @@ export default function Home() {
         </section>
 
         {/* 3. プロフィール */}
-        <section id="page-2" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
+        <section id="page-2" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: isMobile ? '60px 20px' : '80px 60px' }}>
           <CornerBoxes />
           <div style={{ maxWidth: '1100px', width: '100%' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>プロフィール</h2>
+            <h2 style={{ fontSize: isMobile ? '2rem' : '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>プロフィール</h2>
             <GoldUnderline />
-            <div style={{ display: 'flex', gap: '60px', marginTop: '60px', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '30px' : '60px', marginTop: isMobile ? '40px' : '60px', alignItems: isMobile ? 'center' : 'flex-start' }}>
               <div style={{ flex: '0 0 auto' }}>
-                <img src="/profile.jpg" alt="川畑 和弘" style={{ width: '280px', height: '330px', objectFit: 'cover', borderRadius: '4px', border: '3px solid var(--forest-green)' }} />
+                <img src="/profile.jpg" alt="川畑 和弘" style={{ width: isMobile ? '200px' : '280px', height: isMobile ? '235px' : '330px', objectFit: 'cover', borderRadius: '4px', border: '3px solid var(--forest-green)' }} />
               </div>
               <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '1.8rem', color: 'var(--forest-green)', marginBottom: '10px', borderBottom: '2px solid var(--gold)', paddingBottom: '10px', display: 'inline-block' }}>
+                <h3 style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', color: 'var(--forest-green)', marginBottom: '10px', borderBottom: '2px solid var(--gold)', paddingBottom: '10px', display: 'inline-block' }}>
                   川畑 和弘　Service Hospitality Advisor
                 </h3>
-                <div style={{ marginTop: '30px', fontSize: '0.95rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ marginTop: isMobile ? '20px' : '30px', fontSize: isMobile ? '0.85rem' : '0.95rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <p>
                     調理師専門学校卒。箱根のオーベルジュでサービスの礎を築き、ワインバーの店長として現場と運営に携わる。地方のリゾートホテルで"時間をともにするおもてなし"を深め、三つ星レストランでは支配人として空間と体験づくりを統括。
                   </p>
@@ -359,7 +448,7 @@ export default function Home() {
             <p style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-gray)', marginTop: '25px', lineHeight: '1.8', maxWidth: '950px', margin: '25px auto 0' }}>
               文化（Identity）を芯に据え、現場の技術（Service/Hospitality）で体験化。オペレーション（Operation）が再現性を支え、コミュニケーション（Relationship）が関係性とファンを育成。4つの循環で"人が変わっても価値が続く店"を実現します。
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '35px', marginTop: '40px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '25px' : '35px', marginTop: '40px' }}>
               {[
                 { num: '1', title: 'Service / Hospitality', subtitle: '技術と心の両輪を整える', desc: '言葉遣い・声の温度・間の使い方、所作・立ち姿・手の動きなど、茶道の身体技法を応用したサービス体系の構築と実践。', page: 6 },
                 { num: '2', title: 'Culture / Identity', subtitle: '存在理由を言語化し、文化を浸透', desc: 'ミッション・ビジョンの整理、価値観にもとづく判断基準の設定。店の哲学を共有し、自走する組織へと導きます。', page: 7 },
@@ -884,7 +973,7 @@ export default function Home() {
             <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>サービス事例・お客様の声</h2>
             <GoldUnderline />
 
-            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '35px' }}>
+            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '30px' : '35px' }}>
               {/* サービス事例 */}
               <div>
                 <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px', textAlign: 'center', borderBottom: '3px solid var(--gold)', paddingBottom: '12px' }}>サービス事例</h3>
@@ -973,7 +1062,7 @@ export default function Home() {
             <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>お問い合わせ</h2>
             <GoldUnderline />
 
-            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '25px' : '30px' }}>
               {/* お問い合わせフォーム */}
               <div style={{ background: 'white', padding: '30px', borderRadius: '12px', border: '3px solid var(--gold)' }}>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '20px', textAlign: 'center' }}>お問い合わせフォーム</h3>

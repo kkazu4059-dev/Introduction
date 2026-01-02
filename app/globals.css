@@ -24,6 +24,13 @@ html {
   overflow-x: hidden;
 }
 
+/* モバイル対応：スクロールスナップを無効化 */
+@media (max-width: 767px) {
+  html {
+    scroll-snap-type: none;
+  }
+}
+
 body {
   font-family: 'Noto Sans JP', sans-serif;
   color: var(--text-dark);
