@@ -2,15 +2,8 @@
 
 import { useState } from 'react';
 
-// 装飾用のコーナーボックスコンポーネント
-const CornerBoxes = () => (
-  <>
-    <div style={{ position: 'absolute', top: '40px', left: '40px', width: '70px', height: '70px', border: '2px solid var(--forest-green)', borderRadius: '4px' }} />
-    <div style={{ position: 'absolute', top: '40px', right: '40px', width: '70px', height: '70px', border: '2px solid var(--forest-green)', borderRadius: '4px' }} />
-    <div style={{ position: 'absolute', bottom: '40px', left: '40px', width: '70px', height: '70px', border: '2px solid var(--forest-green)', borderRadius: '4px' }} />
-    <div style={{ position: 'absolute', bottom: '40px', right: '40px', width: '70px', height: '70px', border: '2px solid var(--forest-green)', borderRadius: '4px' }} />
-  </>
-);
+// 装飾用のコーナーボックスコンポーネント（無効化）
+const CornerBoxes = () => null;
 
 // ゴールドのアンダーラインコンポーネント
 const GoldUnderline = () => (
@@ -51,8 +44,17 @@ export default function Home() {
 
   const scrollToPage = (pageIndex: number) => {
     const element = document.getElementById(`page-${pageIndex}`);
-    element?.scrollIntoView({ behavior: 'smooth' });
-    setCurrentPage(pageIndex);
+    if (element) {
+      const headerHeight = 80; // ヘッダーの高さ
+      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPosition = elementPosition - headerHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+      setCurrentPage(pageIndex);
+    }
   };
 
   return (
@@ -349,15 +351,15 @@ export default function Home() {
         </section>
 
         {/* 6. 提供サービス概要 */}
-        <section id="page-5" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
+        <section id="page-5" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '60px 40px' }}>
           <CornerBoxes />
           <div style={{ maxWidth: '1200px', width: '100%' }}>
-            <h2 style={{ fontSize: '2.8rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>提供サービス概要 ｜ 4つの柱</h2>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>提供サービス概要 ｜ 4つの柱</h2>
             <GoldUnderline />
-            <p style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-gray)', marginTop: '30px', lineHeight: '1.8', maxWidth: '950px', margin: '30px auto 0' }}>
+            <p style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-gray)', marginTop: '25px', lineHeight: '1.8', maxWidth: '950px', margin: '25px auto 0' }}>
               文化（Identity）を芯に据え、現場の技術（Service/Hospitality）で体験化。オペレーション（Operation）が再現性を支え、コミュニケーション（Relationship）が関係性とファンを育成。4つの循環で"人が変わっても価値が続く店"を実現します。
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginTop: '60px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '35px', marginTop: '40px' }}>
               {[
                 { num: '1', title: 'Service / Hospitality', subtitle: '技術と心の両輪を整える', desc: '言葉遣い・声の温度・間の使い方、所作・立ち姿・手の動きなど、茶道の身体技法を応用したサービス体系の構築と実践。', page: 6 },
                 { num: '2', title: 'Culture / Identity', subtitle: '存在理由を言語化し、文化を浸透', desc: 'ミッション・ビジョンの整理、価値観にもとづく判断基準の設定。店の哲学を共有し、自走する組織へと導きます。', page: 7 },
@@ -370,7 +372,7 @@ export default function Home() {
                   style={{
                     border: '2px solid rgba(61, 90, 60, 0.2)',
                     borderRadius: '8px',
-                    padding: '30px',
+                    padding: '25px',
                     background: 'white',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
@@ -401,11 +403,11 @@ export default function Home() {
                     if (desc) desc.style.color = 'var(--text-dark)';
                   }}
                 >
-                  <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'var(--forest-green)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '20px' }}>{service.num}</div>
-                  <h3 style={{ fontSize: '1.4rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '10px', transition: 'color 0.3s ease' }}>{service.title}</h3>
-                  <p style={{ fontSize: '0.95rem', color: 'var(--text-gray)', fontWeight: '500', marginBottom: '15px', transition: 'color 0.3s ease' }}>{service.subtitle}</p>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-dark)', lineHeight: '1.8', transition: 'color 0.3s ease' }}>{service.desc}</p>
-                  <div style={{ position: 'absolute', bottom: '20px', right: '20px', fontSize: '1.5rem', color: 'var(--gold)' }}>→</div>
+                  <div style={{ width: '45px', height: '45px', borderRadius: '50%', background: 'var(--forest-green)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 'bold', marginBottom: '16px' }}>{service.num}</div>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '8px', transition: 'color 0.3s ease' }}>{service.title}</h3>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-gray)', fontWeight: '500', marginBottom: '12px', transition: 'color 0.3s ease' }}>{service.subtitle}</p>
+                  <p style={{ fontSize: '0.87rem', color: 'var(--text-dark)', lineHeight: '1.7', transition: 'color 0.3s ease' }}>{service.desc}</p>
+                  <div style={{ position: 'absolute', bottom: '18px', right: '18px', fontSize: '1.4rem', color: 'var(--gold)' }}>→</div>
                 </div>
               ))}
             </div>
