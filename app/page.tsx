@@ -1,1052 +1,1001 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { generateClient } from 'aws-amplify/data';
+import type { Schema } from '@/amplify/data/resource';
 
-// 装飾用のコーナーボックスコンポーネント（無効化）
-const CornerBoxes = () => null;
+const client = generateClient<Schema>();
 
-// ゴールドのアンダーラインコンポーネント
-const GoldUnderline = () => (
-  <div style={{ width: '60px', height: '3px', background: 'var(--gold)', margin: '0 auto' }} />
-);
+const HERO_IMG = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1920&q=80';
+const PROFILE_IMG = '/profile.jpg';
+
+const FAQItem = ({ question, answer }: { question: string; answer: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div style={{ borderBottom: '1px solid rgba(61,90,60,0.15)' }}>
+      <button onClick={() => setIsOpen(!isOpen)} style={{
+        width: '100%', display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center', padding: '24px 0', background: 'none',
+        border: 'none', cursor: 'pointer', textAlign: 'left',
+        fontSize: '1rem', fontWeight: '600', color: 'var(--text-dark)', fontFamily: 'inherit',
+      }}>
+        <span style={{ flex: 1, paddingRight: '20px', lineHeight: '1.5' }}>
+          <span style={{ color: 'var(--gold)', marginRight: '10px', fontWeight: '700' }}>Q</span>
+          {question}
+        </span>
+        <span style={{
+          width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+          background: isOpen ? 'var(--forest-green)' : 'transparent',
+          border: '2px solid var(--forest-green)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: isOpen ? 'white' : 'var(--forest-green)', fontSize: '1.4rem', lineHeight: '1',
+          transition: 'all 0.3s ease', transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)',
+        }}>+</span>
+      </button>
+      <div style={{ maxHeight: isOpen ? '400px' : '0', overflow: 'hidden', transition: 'max-height 0.4s ease' }}>
+        <div style={{ paddingBottom: '24px', paddingLeft: '24px', fontSize: '0.93rem', lineHeight: '1.85', color: 'var(--text-gray)' }}>
+          <span style={{ color: 'var(--forest-green)', fontWeight: '700', marginRight: '10px' }}>A</span>
+          {answer}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function Home() {
-  const [currentPage, setCurrentPage] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    message: '',
-  });
+  const [scrolled, setScrolled] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
+  const [formStatus, setFormStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
+  const [expandedService, setExpandedService] = useState<number | null>(null);
+  const [hoveredPlan, setHoveredPlan] = useState<number | null>(null);
 
-  // ウィンドウサイズを検出してモバイル判定
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const handleScroll = () => setScrolled(window.scrollY > 10);
     checkMobile();
     window.addEventListener('resize', checkMobile);
-
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
-  const pages = [
-    'hero',
-    'vision',
-    'profile',
-    'career',
-    'strengths',
-    'services',
-    'service-detail-1',
-    'service-detail-2',
-    'service-detail-3',
-    'service-detail-4',
-    'process',
-    'pricing',
-    'cases',
-    'schedule',
-    'contact'
-  ];
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert('お問い合わせありがとうございます。後ほどご連絡させていただきます。');
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 80, behavior: 'smooth' });
+    setIsMenuOpen(false);
   };
 
-  const scrollToPage = (pageIndex: number) => {
-    const element = document.getElementById(`page-${pageIndex}`);
-    if (element) {
-      const headerHeight = 80; // ヘッダーの高さ
-      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
-      const offsetPosition = elementPosition - headerHeight;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormStatus('sending');
+    try {
+      await client.models.Contact.create({
+        name:    formData.name,
+        email:   formData.email,
+        phone:   formData.phone || undefined,
+        message: formData.message,
       });
-      setCurrentPage(pageIndex);
+      setFormStatus('done');
+      setFormData({ name: '', email: '', phone: '', message: '' });
+    } catch (err) {
+      console.error(err);
+      setFormStatus('error');
     }
   };
 
+  const navItems = [
+    { label: 'プロフィール', id: 'profile' },
+    { label: 'サービス', id: 'services' },
+    { label: 'プロセス', id: 'process' },
+    { label: '料金', id: 'pricing' },
+    { label: '実績', id: 'cases' },
+    { label: 'FAQ', id: 'faq' },
+  ];
+
+  const concerns = [
+    { icon: '👥', text: 'スタッフの接客レベルがバラバラで統一できない' },
+    { icon: '📉', text: '新人が育たず、すぐに辞めてしまう' },
+    { icon: '💬', text: 'お店の世界観をうまくスタッフに伝えられない' },
+    { icon: '🔄', text: '開業はしたが、リピーターが増えない' },
+    { icon: '🏪', text: 'オーナーが現場を離れると品質が落ちる' },
+  ];
+
+  const services = [
+    {
+      num: '1', title: 'Service / Hospitality', subtitle: '技術と心の両輪を整える',
+      image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80',
+      desc: '言葉遣い・声の温度・間の使い方、所作・立ち姿・手の動きなど、茶道の身体技法を応用したサービス体系の構築と実践。',
+      details: ['言葉遣い・声の温度・間の取り方', '所作・立ち姿・手の動きの整え方', '無駄を減らした動線と提供タイミング', '役割・ポジション・フローの設計', 'テーブルコントロール／予約・席数調整・料理提供のタイミング', '"人として出会う"姿勢（笑顔、安心感）', '相手の状態を読み取り、緊張 → 安心 → 信頼へ導く', '過不足のない"ちょうど良い"配慮でゲストの時間を大切にする'],
+    },
+    {
+      num: '2', title: 'Culture / Identity', subtitle: '存在理由を言語化し、文化を浸透',
+      image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80',
+      desc: 'ミッション・ビジョンの整理、価値観にもとづく判断基準の設定。店の哲学を共有し、自走する組織へと導きます。',
+      details: ['「大切にしたい価値観」を言語化する', 'ゲストにどんな価値を届けるのかを明確にする', '価値観 → 行動基準 に落とし込む', 'スタッフ全員が理解し、再現できる状態にする', '属人化をなくし、再現性のある"型"をつくる', 'スタッフが自分の役割に価値を感じられる状態をつくる', '朝礼・ミーティングを"文化を育てる時間"として再設計'],
+    },
+    {
+      num: '3', title: 'Operation / Team Support', subtitle: '動線と役割を最適化し再現性を確保',
+      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80',
+      desc: '作業の重複・無駄を減らす配置設計、役割分担の明確化、品質チェック体制の構築。効率と品質の両立を実現します。',
+      details: ['営業中の立ち位置・動き方の整理', 'ピーク時に対応できる動線と配置の設計', 'だれでも迷わず動けるオペレーション表の作成', 'キッチンとサービスの連携強化によるスムーズ化', '役割・担当・作業手順の明確化', 'マネージャー／リーダー育成支援', '新人が迷わない育成ステップの明確化（マニュアル整備）'],
+    },
+    {
+      num: '4', title: 'Communication / Relationship', subtitle: '体験前後まで設計し、関係性を育てる',
+      image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80',
+      desc: '予約〜退店後までの体験設計、言葉のトーン統一、自然な紹介・再訪につながる接点づくり。地域・生産者との共創を促進します。',
+      details: ['予約〜来店〜退店後まで一貫した体験の流れをつくる', '初来店・常連に合わせた声かけやご案内の工夫', '期待感を高める情報発信（SNS／メール／メニュー説明）', '生産者のストーリーを自然に紹介できる仕組み', '地域・コミュニティとの協働の土台づくり', '言葉遣い・トーンの統一と共通言語づくり', '自然な紹介・リピートにつながる接点の設計'],
+    },
+  ];
+
+  const processSteps = [
+    { num: '1', title: 'ヒアリング', desc: 'お店の現状や、大切にしている想いを丁寧に伺います。' },
+    { num: '2', title: '現場視察・体験分析', desc: '店舗を訪問し、サービス・空間・顧客体験を多角的に分析します。' },
+    { num: '3', title: '改善提案・研修設計', desc: '貴店ならではの"らしさ"が伝わる行動基準と研修プランを設計します。' },
+    { num: '4', title: '実施・フォロー', desc: '研修後のフォローを通じて、習慣化とチームの行動変化をサポートします。' },
+  ];
+
+  const plans = [
+    {
+      name: 'スポットトレーニング', price: '¥30,000〜', duration: '1回（約2時間）', highlight: false,
+      details: ['現状の課題・目標をヒアリングし、改善ポイントを整理', '店舗の特徴に合った接客・サービス改善案の提示', '所作/声の使い方など"再現しやすい型"のミニレクチャー', '課題テーマに応じた短時間のトレーニング'],
+      note: 'まずは気になる部分から整えてまいります。',
+    },
+    {
+      name: '終日サポート', price: '¥100,000', duration: '1日（約8時間）', highlight: true,
+      details: ['営業中の現場に同席し、リアルタイムでフィードバック', 'ホール動線・提供の流れ・チーム連携のチェック', 'オペレーション構築のアドバイス・改善案の提示', 'VIP対応・イベントの事前準備から当日最適化まで'],
+      note: '実際の現場において成功に導くための支援をいたします。',
+    },
+    {
+      name: 'チーム育成サポート', price: '¥200,000〜400,000', duration: '月額制（4〜6回/月）', highlight: false,
+      details: ['定期的な研修・コーチングで着実なスキルアップ', '営業日の実践指導で"現場で使える力"を育成', '振り返りと改善提案で品質を継続的に向上', '中長期的な組織成長・サービス文化づくり'],
+      note: '現場の力を底上げし、組織の"サービス文化"を根づかせます。',
+    },
+  ];
+
+  const cases = [
+    { category: '高級レストラン', tag: '組織開発', title: 'ミシュラン三つ星レストランの運営体制構築', desc: '支配人として6年間、サービス品質の向上と組織文化の浸透を統括。スタッフ育成プログラムの設計により一貫した顧客体験を実現。グリーンスター獲得を含む持続可能な運営体制を確立しました。' },
+    { category: 'リゾートホテル', tag: 'マネジメント', title: 'ホテル料飲部門の統括マネジメント', desc: 'ラウンジ、イタリアン、レストランの3部門を統括し、サービス基準の統一と効率化を実現。スタッフ教育体系の整備により、顧客満足度とリピート率が大幅に向上しました。' },
+    { category: '新規開業店', tag: '開業支援', title: 'スペインバル立ち上げ・店長就任', desc: '新規開業のスペインバルにて、コンセプト設計からオペレーション構築、スタッフ採用・育成まで一貫して担当。幅広い顧客層に対応できる柔軟な接客体制を確立しました。' },
+  ];
+
+  const testimonials = [
+    { name: 'A様', role: 'レストランオーナー', comment: '川畑さんの指導で、スタッフの意識が劇的に変わりました。「なぜそうするのか」を理解させる手法が素晴らしく、自分で考えて動けるチームになりました。' },
+    { name: 'B様', role: 'ホテル支配人', comment: '茶道の所作を取り入れた研修は目から鱗でした。立ち姿、手の動き、間の取り方まで、すべてに意味があることを学び、お客様からの評価も明らかに向上しています。' },
+    { name: 'C様', role: 'カフェ経営者', comment: '開業前の相談から親身に対応していただきました。コンセプト整理から実際のオペレーション設計まで、現場目線でアドバイスいただけたことで、スムーズな立ち上げができました。' },
+    { name: 'D様', role: '料理長', comment: 'サービスとキッチンの連携がうまくいかず悩んでいましたが、川畑さんの支援によりチーム全体の一体感が生まれました。今では互いをリスペクトし合える関係性が築けています。' },
+  ];
+
+  const faqs = [
+    { question: 'どのような業態に対応していますか？', answer: 'レストラン、ホテル、カフェ、バー、旅館など飲食・宿泊業全般に対応しています。高級店から町場のお店まで、規模や業態を問わず、それぞれの"らしさ"に合わせてサポートいたします。' },
+    { question: '研修は何回くらい必要ですか？', answer: 'お店の現状や目標によって異なります。初回ヒアリングの上でご提案いたします。目安として、基礎的な改善は3〜6ヶ月、文化づくりまで含めると6〜12ヶ月を推奨しています。' },
+    { question: '地方でも対応可能ですか？', answer: 'はい、対応可能です。出張費・交通費は別途ご相談となりますが、全国対応しております。オンラインでのヒアリングや事前コンサルも組み合わせることで、効率的にサポートいたします。' },
+    { question: 'まずは相談だけでもできますか？', answer: 'もちろんです。まずはお気軽にお問い合わせください。初回のヒアリングは無料で承っております。お店の状況やお悩みをお聞きした上で、最適なプランをご提案いたします。' },
+  ];
+
+  const sec = (bg: string): React.CSSProperties => ({ padding: isMobile ? '72px 20px' : '100px 40px', background: bg });
+  const wrap: React.CSSProperties = { maxWidth: '1200px', margin: '0 auto' };
+
+  const SLabel = ({ t }: { t: string }) => (
+    <p style={{ fontSize: '0.72rem', fontWeight: '700', letterSpacing: '0.25em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: '12px' }}>{t}</p>
+  );
+  const STitle = ({ t, light }: { t: string; light?: boolean }) => (
+    <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.4rem', fontWeight: '700', color: light ? 'white' : 'var(--text-dark)', marginBottom: '20px', lineHeight: '1.3' }}>{t}</h2>
+  );
+  const Divider = () => <div style={{ width: '48px', height: '3px', background: 'var(--gold)', margin: '0 auto' }} />;
+
+  const navBtn = (label: string, id: string) => (
+    <button key={id} onClick={() => scrollTo(id)} style={{
+      background: 'none', border: 'none', cursor: 'pointer',
+      fontSize: '0.88rem', fontWeight: '500', color: 'var(--text-dark)',
+      fontFamily: 'inherit', padding: '4px 0', borderBottom: '2px solid transparent', transition: 'all 0.3s ease',
+    }}
+    onMouseEnter={(e) => { e.currentTarget.style.borderBottomColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--forest-green)'; }}
+    onMouseLeave={(e) => { e.currentTarget.style.borderBottomColor = 'transparent'; e.currentTarget.style.color = 'var(--text-dark)'; }}>
+      {label}
+    </button>
+  );
+
   return (
     <>
-      {/* トップ固定ナビゲーション */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, background: 'rgba(248, 245, 242, 0.95)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(61, 90, 60, 0.1)' }}>
-        <nav style={{ maxWidth: '1400px', margin: '0 auto', padding: isMobile ? '15px 20px' : '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: isMobile ? '1.1rem' : '1.3rem', fontWeight: 'bold', color: 'var(--forest-green)', cursor: 'pointer' }} onClick={() => scrollToPage(0)}>
-            川畑 和弘
-          </div>
+      {/* ── HEADER ── */}
+      <header style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
+        background: 'white',
+        borderBottom: '1px solid rgba(61,90,60,0.1)',
+        boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.08)' : 'none',
+        transition: 'box-shadow 0.3s ease',
+      }}>
+        <nav style={{
+          maxWidth: '1400px', margin: '0 auto',
+          padding: isMobile ? '16px 20px' : '18px 48px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <button onClick={() => scrollTo('hero')} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: isMobile ? '1.1rem' : '1.2rem', fontWeight: '700',
+            color: 'var(--forest-green)', fontFamily: 'inherit', letterSpacing: '0.05em',
+          }}>川畑 和弘</button>
 
-          {/* ハンバーガーメニューボタン（モバイル） */}
-          {isMobile && (
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '10px',
-                zIndex: 201
-              }}
-            >
+          {isMobile ? (
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <div style={{ width: '25px', height: '3px', background: 'var(--forest-green)', borderRadius: '2px', transition: 'all 0.3s', transform: isMenuOpen ? 'rotate(45deg) translateY(8px)' : 'none' }} />
-                <div style={{ width: '25px', height: '3px', background: 'var(--forest-green)', borderRadius: '2px', transition: 'all 0.3s', opacity: isMenuOpen ? 0 : 1 }} />
-                <div style={{ width: '25px', height: '3px', background: 'var(--forest-green)', borderRadius: '2px', transition: 'all 0.3s', transform: isMenuOpen ? 'rotate(-45deg) translateY(-8px)' : 'none' }} />
+                {[0, 1, 2].map((i) => (
+                  <div key={i} style={{
+                    width: '24px', height: '2px', background: 'var(--forest-green)', borderRadius: '2px', transition: 'all 0.3s',
+                    transform: i === 0 && isMenuOpen ? 'rotate(45deg) translateY(7px)' : i === 2 && isMenuOpen ? 'rotate(-45deg) translateY(-7px)' : 'none',
+                    opacity: i === 1 && isMenuOpen ? 0 : 1,
+                  }} />
+                ))}
               </div>
             </button>
-          )}
-
-          {/* デスクトップメニュー */}
-          <ul style={{ display: isMobile ? 'none' : 'flex', gap: '40px', listStyle: 'none', margin: 0, padding: 0, alignItems: 'center' }}>
-            {[
-              { label: 'ビジョン', page: 1 },
-              { label: 'プロフィール', page: 2 },
-              { label: 'サービス', page: 5 },
-              { label: '実施プロセス', page: 10 },
-              { label: '実績・事例', page: 13 }
-            ].map((item, index) => (
-              <li key={index}>
-                <button
-                  onClick={() => scrollToPage(item.page)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '0.95rem',
-                    color: 'var(--text-dark)',
-                    cursor: 'pointer',
-                    fontWeight: '500',
-                    padding: '8px 0',
-                    borderBottom: '2px solid transparent',
-                    transition: 'all 0.3s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderBottomColor = 'var(--gold)';
-                    e.currentTarget.style.color = 'var(--forest-green)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderBottomColor = 'transparent';
-                    e.currentTarget.style.color = 'var(--text-dark)';
-                  }}
-                >
-                  {item.label}
+          ) : (
+            <ul style={{ display: 'flex', gap: '32px', listStyle: 'none', margin: 0, padding: 0, alignItems: 'center' }}>
+              {navItems.map((item) => <li key={item.id}>{navBtn(item.label, item.id)}</li>)}
+              <li>
+                <button onClick={() => scrollTo('contact')} style={{
+                  background: 'var(--forest-green)', border: 'none', cursor: 'pointer',
+                  fontSize: '0.88rem', fontWeight: '600', color: 'white',
+                  padding: '10px 26px', borderRadius: '50px', fontFamily: 'inherit',
+                  transition: 'all 0.3s ease', boxShadow: '0 4px 14px rgba(61,90,60,0.3)',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 22px rgba(61,90,60,0.4)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(61,90,60,0.3)'; }}>
+                  お問い合わせ
                 </button>
               </li>
-            ))}
-            <li>
-              <button
-                onClick={() => scrollToPage(14)}
-                style={{
-                  background: 'var(--gold)',
-                  border: 'none',
-                  fontSize: '0.95rem',
-                  color: 'white',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  padding: '12px 24px',
-                  borderRadius: '30px',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 12px rgba(212, 163, 115, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--gold-dark)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(212, 163, 115, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--gold)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 163, 115, 0.3)';
-                }}
-              >
-                <span style={{ fontSize: '1.2rem' }}>✉</span>
-                お問い合わせ
-              </button>
-            </li>
-          </ul>
-
-          {/* モバイルメニュー */}
-          {isMobile && isMenuOpen && (
-            <div style={{
-              position: 'fixed',
-              top: '60px',
-              left: 0,
-              right: 0,
-              background: 'var(--beige)',
-              borderBottom: '2px solid var(--forest-green)',
-              padding: '20px',
-              zIndex: 199,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-            }}>
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                {[
-                  { label: 'ビジョン', page: 1 },
-                  { label: 'プロフィール', page: 2 },
-                  { label: 'サービス', page: 5 },
-                  { label: '実施プロセス', page: 10 },
-                  { label: '実績・事例', page: 13 }
-                ].map((item, index) => (
-                  <li key={index}>
-                    <button
-                      onClick={() => {
-                        scrollToPage(item.page);
-                        setIsMenuOpen(false);
-                      }}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        fontSize: '1rem',
-                        color: 'var(--text-dark)',
-                        cursor: 'pointer',
-                        fontWeight: '500',
-                        padding: '12px',
-                        width: '100%',
-                        textAlign: 'left',
-                        borderBottom: '1px solid rgba(61, 90, 60, 0.1)'
-                      }}
-                    >
-                      {item.label}
-                    </button>
-                  </li>
-                ))}
-                <li>
-                  <button
-                    onClick={() => {
-                      scrollToPage(14);
-                      setIsMenuOpen(false);
-                    }}
-                    style={{
-                      background: 'var(--gold)',
-                      border: 'none',
-                      fontSize: '1rem',
-                      color: 'white',
-                      cursor: 'pointer',
-                      fontWeight: '600',
-                      padding: '12px',
-                      borderRadius: '8px',
-                      width: '100%',
-                      marginTop: '10px'
-                    }}
-                  >
-                    ✉ お問い合わせ
-                  </button>
-                </li>
-              </ul>
-            </div>
+            </ul>
           )}
         </nav>
+
+        {isMobile && isMenuOpen && (
+          <div style={{ background: 'white', borderTop: '1px solid rgba(61,90,60,0.1)', padding: '16px 20px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}>
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
+              {navItems.map((item) => (
+                <li key={item.id}>
+                  <button onClick={() => scrollTo(item.id)} style={{
+                    background: 'none', border: 'none', cursor: 'pointer', width: '100%',
+                    textAlign: 'left', padding: '14px 8px', fontSize: '1rem', fontWeight: '500',
+                    color: 'var(--text-dark)', fontFamily: 'inherit', borderBottom: '1px solid rgba(61,90,60,0.08)',
+                  }}>{item.label}</button>
+                </li>
+              ))}
+              <li style={{ marginTop: '12px' }}>
+                <button onClick={() => scrollTo('contact')} style={{
+                  background: 'var(--forest-green)', border: 'none', cursor: 'pointer', width: '100%',
+                  padding: '14px', fontSize: '1rem', fontWeight: '600', color: 'white', borderRadius: '10px', fontFamily: 'inherit',
+                }}>お問い合わせ</button>
+              </li>
+            </ul>
+          </div>
+        )}
       </header>
 
       <main>
-        {/* 1. ヒーローページ */}
-        <section id="page-0" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)' }}>
-          <CornerBoxes />
-          <div style={{ textAlign: 'center', maxWidth: '900px', padding: isMobile ? '0 20px' : '0 40px', position: 'relative', zIndex: 1 }}>
-            <div style={{ position: 'absolute', top: isMobile ? '-60px' : '-100px', left: '50%', transform: 'translateX(-50%)', width: '2px', height: isMobile ? '50px' : '80px', background: 'var(--forest-green)' }} />
-            <h1 style={{ fontSize: isMobile ? '1.8rem' : '3.5rem', fontWeight: 'bold', color: 'var(--text-dark)', marginBottom: isMobile ? '20px' : '30px', letterSpacing: '0.05em' }}>
+
+        {/* ── HERO: full-width image with text overlay ── */}
+        <section id="hero" style={{
+          position: 'relative',
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+        }}>
+          {/* Background image */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: `url(${HERO_IMG})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 40%',
+          }} />
+          {/* Dark overlay — bottom-heavy gradient for text legibility */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(to bottom, rgba(10,20,10,0.45) 0%, rgba(10,20,10,0.55) 50%, rgba(5,15,5,0.75) 100%)',
+          }} />
+
+          {/* Content */}
+          <div style={{
+            position: 'relative', zIndex: 1,
+            textAlign: 'center',
+            maxWidth: '860px',
+            padding: isMobile ? '120px 28px 80px' : '0 48px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}>
+            {/* Top label */}
+            <p style={{
+              fontSize: '0.7rem', fontWeight: '700', letterSpacing: '0.35em',
+              color: 'var(--gold)', textTransform: 'uppercase', marginBottom: '28px',
+            }}>
               Service Hospitality Trainer
+            </p>
+
+            {/* Name */}
+            <h1 style={{
+              fontSize: isMobile ? '3rem' : '5.5rem',
+              fontWeight: '700', color: 'white',
+              lineHeight: '1.05', marginBottom: '0',
+              letterSpacing: '0.08em',
+              textShadow: '0 2px 24px rgba(0,0,0,0.4)',
+            }}>
+              川畑 和弘
             </h1>
-            <GoldUnderline />
-            <h2 style={{ fontSize: isMobile ? '1.6rem' : '2.5rem', color: 'var(--forest-green)', margin: isMobile ? '25px 0 20px' : '40px 0 30px', letterSpacing: '0.1em' }}>
-川畑 和弘
-            </h2>
-            <p style={{ fontSize: isMobile ? '1rem' : '1.3rem', fontStyle: 'italic', color: 'var(--text-gray)', marginBottom: isMobile ? '25px' : '40px' }}>
+
+            {/* Gold divider */}
+            <div style={{ width: '56px', height: '2px', background: 'var(--gold)', margin: '28px auto' }} />
+
+            {/* Tagline */}
+            <p style={{
+              fontSize: isMobile ? '0.95rem' : '1.15rem',
+              fontStyle: 'italic',
+              color: 'rgba(255,255,255,0.82)',
+              marginBottom: '28px',
+              letterSpacing: '0.06em',
+              lineHeight: '1.6',
+            }}>
               Delighting People, Cultivating the Future.
             </p>
-            <p style={{ fontSize: isMobile ? '0.85rem' : '1rem', color: 'var(--text-dark)', marginBottom: '15px', lineHeight: '1.8' }}>
-              接客コーチング / ホスピタリーマネジメント / レストラン・ホテル開業サポート / 組織開発
+
+            {/* Services */}
+            <p style={{
+              fontSize: isMobile ? '0.82rem' : '0.95rem',
+              color: 'rgba(255,255,255,0.75)',
+              lineHeight: '2.1',
+              marginBottom: '12px',
+              letterSpacing: '0.04em',
+            }}>
+              接客コーチング&nbsp;/&nbsp;ホスピタリティマネジメント<br />
+              レストラン・ホテル開業サポート&nbsp;/&nbsp;組織開発
             </p>
-            <p style={{ fontSize: isMobile ? '0.85rem' : '0.95rem', fontWeight: 600, color: 'var(--text-dark)', fontStyle: 'italic' }}>
+
+            {/* Subtitle */}
+            <p style={{
+              fontSize: isMobile ? '0.8rem' : '0.88rem',
+              color: 'rgba(255,255,255,0.55)',
+              marginBottom: '52px',
+              lineHeight: '1.8',
+              fontStyle: 'italic',
+            }}>
               お店の想いに寄り添い、心地よいサービス体験を丁寧に設計いたします。
             </p>
+
+            {/* CTAs */}
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button onClick={() => scrollTo('services')} style={{
+                padding: isMobile ? '14px 36px' : '16px 48px',
+                fontSize: '0.95rem', fontWeight: '600',
+                background: 'var(--gold)', color: 'white', border: 'none',
+                borderRadius: '50px', cursor: 'pointer', fontFamily: 'inherit',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 6px 28px rgba(212,163,115,0.5)',
+                letterSpacing: '0.04em',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(212,163,115,0.6)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(212,163,115,0.5)'; }}>
+                サービスを見る
+              </button>
+              <button onClick={() => scrollTo('contact')} style={{
+                padding: isMobile ? '14px 36px' : '16px 48px',
+                fontSize: '0.95rem', fontWeight: '600',
+                background: 'transparent', color: 'white',
+                border: '1.5px solid rgba(255,255,255,0.55)',
+                borderRadius: '50px', cursor: 'pointer', fontFamily: 'inherit',
+                transition: 'all 0.3s ease', letterSpacing: '0.04em',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.borderColor = 'white'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.55)'; }}>
+                無料相談する
+              </button>
+            </div>
           </div>
-          {/* ゴールドの曲線装飾（デスクトップのみ） */}
-          {!isMobile && (
-            <>
-              <div style={{ position: 'absolute', top: '60px', right: '180px', width: '300px', height: '300px', border: '2px solid var(--gold)', borderRadius: '50%', borderLeft: 'none', borderBottom: 'none' }} />
-              <div style={{ position: 'absolute', bottom: '60px', left: '40px', width: '200px', height: '200px', border: '2px solid var(--gold)', borderRadius: '50%', borderRight: 'none', borderTop: 'none' }} />
-            </>
-          )}
+
+          {/* Scroll indicator */}
+          <div style={{
+            position: 'absolute', bottom: '36px', left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+          }}>
+            <p style={{ fontSize: '0.62rem', letterSpacing: '0.22em', color: 'rgba(255,255,255,0.4)' }}>SCROLL</p>
+            <div style={{ width: '1px', height: '48px', background: 'linear-gradient(to bottom, rgba(255,255,255,0.4), transparent)' }} />
+          </div>
         </section>
 
-        {/* 2. Vision / Mission / Value */}
-        <section id="page-1" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: isMobile ? '60px 20px' : '80px 60px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1200px', width: '100%' }}>
-            <h2 style={{ fontSize: isMobile ? '2rem' : '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>Vision / Mission / Value</h2>
-            <GoldUnderline />
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '40px' : '60px', marginTop: isMobile ? '40px' : '80px' }}>
-              <div style={{ textAlign: 'center', borderBottom: isMobile ? '1px solid #ccc' : 'none', paddingBottom: isMobile ? '30px' : '0' }}>
-                <div style={{ width: '80px', height: '3px', background: 'var(--gold)', margin: '0 auto 30px' }} />
-                <h3 style={{ fontSize: isMobile ? '1.3rem' : '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>Vision（ビジョン）</h3>
-                <p style={{ fontSize: isMobile ? '1rem' : '1.1rem', fontWeight: '600', marginBottom: '25px', lineHeight: '1.8' }}>
-                  「人が人を喜ばせることで、<br />幸せが循環する社会を。」
+        {/* ── CONCERNS ── */}
+        <section id="concerns" style={{
+          padding: isMobile ? '72px 20px' : '100px 40px',
+          background: 'linear-gradient(160deg, #1a2b19 0%, #243822 60%, #2e4a2c 100%)',
+        }}>
+          <div style={wrap}>
+            {/* Heading */}
+            <div style={{ textAlign: 'center', marginBottom: isMobile ? '52px' : '72px' }}>
+              <p style={{ fontSize: '0.68rem', fontWeight: '700', letterSpacing: '0.32em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: '16px' }}>CHALLENGES</p>
+              <h2 style={{ fontSize: isMobile ? '1.7rem' : '2.4rem', fontWeight: '700', color: 'white', marginBottom: '20px', lineHeight: '1.3' }}>
+                こんなお悩みはありませんか？
+              </h2>
+              <div style={{ width: '48px', height: '2px', background: 'var(--gold)', margin: '0 auto' }} />
+            </div>
+
+            {/* Items grid */}
+            {isMobile ? (
+              /* Mobile: vertical list with separator */
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {concerns.map((c, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: '20px',
+                    padding: '28px 0',
+                    borderBottom: i < concerns.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                  }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--gold)', letterSpacing: '0.05em', flexShrink: 0, minWidth: '28px', marginTop: '2px' }}>
+                      0{i + 1}
+                    </span>
+                    <p style={{ fontSize: '0.97rem', lineHeight: '1.75', color: 'rgba(255,255,255,0.85)', fontWeight: '400' }}>{c.text}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* Desktop: 5-column open grid */
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                borderTop: '1px solid rgba(255,255,255,0.12)',
+              }}>
+                {concerns.map((c, i) => (
+                  <div key={i} style={{
+                    padding: '40px 28px',
+                    borderRight: i < concerns.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                    position: 'relative',
+                  }}>
+                    {/* Gold top accent */}
+                    <div style={{
+                      position: 'absolute', top: 0, left: '28px',
+                      width: '32px', height: '2px', background: 'var(--gold)',
+                    }} />
+                    {/* Number */}
+                    <p style={{
+                      fontSize: '2.2rem', fontWeight: '700',
+                      color: 'rgba(212,163,115,0.25)',
+                      marginBottom: '20px', letterSpacing: '0.02em',
+                      lineHeight: '1',
+                    }}>0{i + 1}</p>
+                    {/* Text */}
+                    <p style={{
+                      fontSize: '0.88rem', lineHeight: '1.85',
+                      color: 'rgba(255,255,255,0.8)',
+                      fontWeight: '400',
+                    }}>{c.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Solution CTA */}
+            <div style={{ marginTop: isMobile ? '52px' : '72px', textAlign: 'center' }}>
+              <div style={{
+                display: 'inline-block',
+                border: '1px solid rgba(212,163,115,0.5)',
+                borderRadius: '4px',
+                padding: isMobile ? '24px 28px' : '28px 64px',
+                marginBottom: '28px',
+              }}>
+                <p style={{ fontSize: isMobile ? '0.95rem' : '1.1rem', color: 'rgba(255,255,255,0.6)', marginBottom: '10px', letterSpacing: '0.05em' }}>
+                  その悩み—
                 </p>
-                <p style={{ fontSize: isMobile ? '0.85rem' : '0.9rem', color: 'var(--text-gray)', lineHeight: '1.9' }}>
-                  おもてなしの力で、人の心がつながり、思いやりの連鎖が生まれる。その連鎖が、地域や社会の豊かさへと広がっていく未来を目指す。
+                <p style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: '700', color: 'white', letterSpacing: '0.04em', lineHeight: '1.4' }}>
+                  すべて、解決できます。
                 </p>
               </div>
-              <div style={{ textAlign: 'center', borderLeft: isMobile ? 'none' : '1px solid #ccc', borderRight: isMobile ? 'none' : '1px solid #ccc', borderBottom: isMobile ? '1px solid #ccc' : 'none', paddingBottom: isMobile ? '30px' : '0' }}>
-                <div style={{ width: '80px', height: '3px', background: 'var(--gold)', margin: '0 auto 30px' }} />
-                <h3 style={{ fontSize: isMobile ? '1.3rem' : '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>Mission（ミッション）</h3>
-                <p style={{ fontSize: isMobile ? '0.95rem' : '1.05rem', fontWeight: '600', marginBottom: '25px', lineHeight: '1.8' }}>
-                  プロのサービスマンとして、<br />人を喜ばせる体験を通じて、<br />サービス業の価値と地位を高める。
-                </p>
-                <p style={{ fontSize: isMobile ? '0.85rem' : '0.9rem', color: 'var(--text-gray)', lineHeight: '1.9' }}>
-                  生産者、ゲスト、そして地域がそれぞれの立場で幸せを感じられるように。"歓び"を軸に、人と社会の関係性をより良い形にデザインする。
-                </p>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ width: '80px', height: '3px', background: 'var(--gold)', margin: '0 auto 30px' }} />
-                <h3 style={{ fontSize: isMobile ? '1.3rem' : '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>Value（バリュー）</h3>
-                <ul style={{ textAlign: 'left', fontSize: isMobile ? '0.85rem' : '0.9rem', color: 'var(--text-dark)', lineHeight: '2.2' }}>
-                  <li style={{ marginBottom: '15px' }}>
-                    <strong>感謝と敬意</strong> – 人とのつながりに感謝し、相手への敬意を忘れない。
-                  </li>
-                  <li style={{ marginBottom: '15px' }}>
-                    <strong>思いやりと誠実</strong> – 相手の立場に立ち、心からのサービスを届ける。
-                  </li>
-                  <li>
-                    <strong>歓びの循環</strong> – 自分の喜びが誰かの喜びへ、そして社会の喜びへとつながる行動を選ぶ。
-                  </li>
-                </ul>
+              <div>
+                <button onClick={() => scrollTo('contact')} style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--gold)', fontWeight: '500', fontSize: '0.88rem',
+                  fontFamily: 'inherit', letterSpacing: '0.1em',
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                }}>
+                  <span>まずは無料でご相談ください</span>
+                  <span style={{ fontSize: '1rem' }}>→</span>
+                </button>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 3. プロフィール */}
-        <section id="page-2" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: isMobile ? '60px 20px' : '80px 60px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1100px', width: '100%' }}>
-            <h2 style={{ fontSize: isMobile ? '2rem' : '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>プロフィール</h2>
-            <GoldUnderline />
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '30px' : '60px', marginTop: isMobile ? '40px' : '60px', alignItems: isMobile ? 'center' : 'flex-start' }}>
-              <div style={{ flex: '0 0 auto' }}>
-                <img src="/profile.jpg" alt="川畑 和弘" style={{ width: isMobile ? '200px' : '280px', height: isMobile ? '235px' : '330px', objectFit: 'cover', borderRadius: '4px', border: '3px solid var(--forest-green)' }} />
+        {/* ── VISION / MISSION / VALUE ── */}
+        <section id="vision" style={{
+          padding: isMobile ? '72px 20px' : '100px 40px',
+          background: 'linear-gradient(160deg, #1a2b19 0%, #243822 60%, #2e4a2c 100%)',
+        }}>
+          <div style={wrap}>
+            {/* Heading */}
+            <div style={{ textAlign: 'center', marginBottom: isMobile ? '52px' : '72px' }}>
+              <p style={{ fontSize: '0.68rem', fontWeight: '700', letterSpacing: '0.32em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: '16px' }}>PHILOSOPHY</p>
+              <h2 style={{ fontSize: isMobile ? '1.7rem' : '2.4rem', fontWeight: '700', color: 'white', marginBottom: '20px', lineHeight: '1.3' }}>
+                Vision / Mission / Value
+              </h2>
+              <div style={{ width: '48px', height: '2px', background: 'var(--gold)', margin: '0 auto' }} />
+            </div>
+
+            {isMobile ? (
+              /* Mobile: vertical */
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {[
+                  {
+                    label: 'Vision', title: 'ビジョン',
+                    main: '「人が人を喜ばせることで、幸せが循環する社会を。」',
+                    desc: 'おもてなしの力で、人の心がつながり、思いやりの連鎖が生まれる。その連鎖が、地域や社会の豊かさへと広がっていく未来を目指す。',
+                    items: null,
+                  },
+                  {
+                    label: 'Mission', title: 'ミッション',
+                    main: 'プロのサービスマンとして、人を喜ばせる体験を通じて、サービス業の価値と地位を高める。',
+                    desc: '生産者、ゲスト、そして地域がそれぞれの立場で幸せを感じられるように。"歓び"を軸に、人と社会の関係性をより良い形にデザインする。',
+                    items: null,
+                  },
+                  {
+                    label: 'Value', title: 'バリュー',
+                    main: null, desc: null,
+                    items: [
+                      { key: '感謝と敬意', desc: '人とのつながりに感謝し、相手への敬意を忘れない。' },
+                      { key: '思いやりと誠実', desc: '相手の立場に立ち、心からのサービスを届ける。' },
+                      { key: '歓びの循環', desc: '自分の喜びが誰かの喜びへ、社会の喜びへとつながる行動を選ぶ。' },
+                    ],
+                  },
+                ].map((item, i, arr) => (
+                  <div key={i} style={{ padding: '28px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                    <p style={{ fontSize: '0.68rem', fontWeight: '700', letterSpacing: '0.22em', color: 'var(--gold)', marginBottom: '6px' }}>{item.label}</p>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: '700', color: 'white', marginBottom: '14px' }}>{item.title}</h3>
+                    {item.main && <p style={{ fontSize: '0.93rem', fontWeight: '600', lineHeight: '1.85', color: 'rgba(255,255,255,0.9)', marginBottom: '10px' }}>{item.main}</p>}
+                    {item.desc && <p style={{ fontSize: '0.86rem', lineHeight: '1.9', color: 'rgba(255,255,255,0.6)' }}>{item.desc}</p>}
+                    {item.items && (
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        {item.items.map((v, j) => (
+                          <li key={j} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                            <span style={{ color: 'var(--gold)', flexShrink: 0, marginTop: '1px' }}>—</span>
+                            <div>
+                              <p style={{ fontSize: '0.88rem', fontWeight: '600', color: 'rgba(255,255,255,0.9)', marginBottom: '3px' }}>{v.key}</p>
+                              <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', lineHeight: '1.7' }}>{v.desc}</p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* Desktop: 3-column open grid matching CHALLENGES */
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                borderTop: '1px solid rgba(255,255,255,0.12)',
+              }}>
+                {[
+                  {
+                    label: 'Vision', title: 'ビジョン',
+                    main: '「人が人を喜ばせることで、幸せが循環する社会を。」',
+                    desc: 'おもてなしの力で、人の心がつながり、思いやりの連鎖が生まれる。その連鎖が、地域や社会の豊かさへと広がっていく未来を目指す。',
+                    items: null,
+                  },
+                  {
+                    label: 'Mission', title: 'ミッション',
+                    main: 'プロのサービスマンとして、人を喜ばせる体験を通じて、サービス業の価値と地位を高める。',
+                    desc: '生産者、ゲスト、そして地域がそれぞれの立場で幸せを感じられるように。"歓び"を軸に、人と社会の関係性をより良い形にデザインする。',
+                    items: null,
+                  },
+                  {
+                    label: 'Value', title: 'バリュー',
+                    main: null, desc: null,
+                    items: [
+                      { key: '感謝と敬意', desc: '人とのつながりに感謝し、相手への敬意を忘れない。' },
+                      { key: '思いやりと誠実', desc: '相手の立場に立ち、心からのサービスを届ける。' },
+                      { key: '歓びの循環', desc: '自分の喜びが誰かの喜びへ、社会の喜びへとつながる行動を選ぶ。' },
+                    ],
+                  },
+                ].map((item, i, arr) => (
+                  <div key={i} style={{
+                    padding: '48px 40px',
+                    borderRight: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                    position: 'relative',
+                  }}>
+                    {/* Gold top accent */}
+                    <div style={{ position: 'absolute', top: 0, left: '40px', width: '32px', height: '2px', background: 'var(--gold)' }} />
+
+                    {/* Large ghost label */}
+                    <p style={{
+                      fontSize: '2rem', fontWeight: '700',
+                      color: 'rgba(212,163,115,0.18)',
+                      marginBottom: '20px', letterSpacing: '0.08em', lineHeight: '1',
+                    }}>{item.label.toUpperCase()}</p>
+
+                    {/* Title */}
+                    <p style={{ fontSize: '0.68rem', fontWeight: '700', letterSpacing: '0.22em', color: 'var(--gold)', marginBottom: '8px' }}>{item.label}</p>
+                    <h3 style={{ fontSize: '1.3rem', fontWeight: '700', color: 'white', marginBottom: '22px', lineHeight: '1.3' }}>{item.title}</h3>
+
+                    {item.main && (
+                      <p style={{ fontSize: '0.95rem', fontWeight: '600', lineHeight: '1.9', color: 'rgba(255,255,255,0.88)', marginBottom: '16px' }}>
+                        {item.main}
+                      </p>
+                    )}
+                    {item.desc && (
+                      <p style={{ fontSize: '0.85rem', lineHeight: '1.95', color: 'rgba(255,255,255,0.55)' }}>
+                        {item.desc}
+                      </p>
+                    )}
+                    {item.items && (
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                        {item.items.map((v, j) => (
+                          <li key={j} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                            <span style={{ color: 'var(--gold)', flexShrink: 0, fontSize: '0.9rem', marginTop: '2px' }}>—</span>
+                            <div>
+                              <p style={{ fontSize: '0.9rem', fontWeight: '600', color: 'rgba(255,255,255,0.88)', marginBottom: '4px' }}>{v.key}</p>
+                              <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.52)', lineHeight: '1.75' }}>{v.desc}</p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── PROFILE ── */}
+        <section id="profile" style={sec('var(--beige)')}>
+          <div style={wrap}>
+            <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+              <SLabel t="PROFILE" />
+              <STitle t="代表プロフィール" />
+              <Divider />
+            </div>
+
+            {/* Bio */}
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '36px' : '72px', alignItems: isMobile ? 'center' : 'flex-start', marginBottom: '56px' }}>
+              <div style={{ flexShrink: 0 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={PROFILE_IMG} alt="川畑 和弘" style={{
+                  width: isMobile ? '200px' : '280px', height: isMobile ? '240px' : '340px',
+                  objectFit: 'cover', objectPosition: 'top',
+                  borderRadius: '4px', border: '1px solid rgba(61,90,60,0.15)',
+                  boxShadow: '12px 12px 0 rgba(61,90,60,0.08)',
+                }} />
               </div>
               <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', color: 'var(--forest-green)', marginBottom: '10px', borderBottom: '2px solid var(--gold)', paddingBottom: '10px', display: 'inline-block' }}>
-                  川畑 和弘　Service Hospitality Advisor
-                </h3>
-                <div style={{ marginTop: isMobile ? '20px' : '30px', fontSize: isMobile ? '0.85rem' : '0.95rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  <p>
-                    調理師専門学校卒。箱根のオーベルジュでサービスの礎を築き、ワインバーの店長として現場と運営に携わる。地方のリゾートホテルで"時間をともにするおもてなし"を深め、三つ星レストランでは支配人として空間と体験づくりを統括。
-                  </p>
-                  <p>
-                    異なる環境で積み重ねた経験から、場所や規模に応じた"心に残る接客と仕組み"を構築。レストラン、ホテル、町場、リゾート—様々な現場で培った知見を、組織と顧客体験の向上に活かします。
-                  </p>
-                  <p>
-                    茶道歴10年。「お互いの時間を大切にしあうこと」を出発点に、言葉、立ち居振る舞い、空気づくりを整える作法を、現代のサービス現場で再現可能な形に落とし込み、おもてなしの軸としています。
-                  </p>
+                <p style={{ fontSize: '0.7rem', fontWeight: '700', letterSpacing: '0.18em', color: 'var(--gold)', marginBottom: '8px' }}>SERVICE HOSPITALITY ADVISOR</p>
+                <h3 style={{ fontSize: isMobile ? '1.6rem' : '2.2rem', fontWeight: '700', color: 'var(--forest-green)', marginBottom: '6px' }}>川畑 和弘</h3>
+                <div style={{ width: '40px', height: '3px', background: 'var(--gold)', marginBottom: '28px' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '0.92rem', lineHeight: '1.95', color: 'var(--text-dark)' }}>
+                  <p>調理師専門学校卒。箱根のオーベルジュでサービスの礎を築き、ワインバーの店長として現場と運営に携わる。地方のリゾートホテルで"時間をともにするおもてなし"を深め、三つ星レストランでは支配人として空間と体験づくりを統括。</p>
+                  <p>異なる環境で積み重ねた経験から、場所や規模に応じた"心に残る接客と仕組み"を構築。レストラン、ホテル、町場、リゾート—様々な現場で培った知見を、組織と顧客体験の向上に活かします。</p>
+                  <p>茶道歴10年。「お互いの時間を大切にしあうこと」を出発点に、言葉、立ち居振る舞い、空気づくりを整える作法を、現代のサービス現場で再現可能な形に落とし込んでいます。</p>
+                </div>
+                <div style={{ marginTop: '28px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  {['調理師免許', 'JSA認定ソムリエ', '茶道歴10年'].map((cert) => (
+                    <span key={cert} style={{ padding: '6px 18px', background: 'white', border: '2px solid var(--forest-green)', borderRadius: '50px', fontSize: '0.78rem', fontWeight: '600', color: 'var(--forest-green)' }}>{cert}</span>
+                  ))}
                 </div>
               </div>
             </div>
-          </div>
-        </section>
 
-        {/* 4. キャリア */}
-        <section id="page-3" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1100px', width: '100%' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>キャリア</h2>
-            <GoldUnderline />
-            <div style={{ marginTop: '70px', display: 'flex', gap: '40px' }}>
-              <div style={{ width: '4px', background: 'var(--forest-green)', position: 'relative' }}>
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} style={{ position: 'absolute', top: `${i * 25}%`, left: '50%', transform: 'translateX(-50%)', width: '14px', height: '14px', borderRadius: '50%', background: i % 2 === 0 ? 'var(--forest-green)' : 'var(--gold)' }} />
-                ))}
-              </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '40px' }}>
+            {/* Career */}
+            <div style={{ background: 'white', borderRadius: '16px', padding: isMobile ? '28px 20px' : '44px 48px', border: '1px solid rgba(61,90,60,0.1)', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--forest-green)', marginBottom: '36px', textAlign: 'center', letterSpacing: '0.06em' }}>キャリア</h3>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {[
-                  { year: '1999-2007', company: 'オーベルジュ・オー・ミラドー', role: 'ギャルソン、ポーター、シェフ・ド・ラン', desc: 'クラシックなフランス式サービスを体系的に学び、料理を最大限に引き立てる顧客体験を習得。' },
-                  { year: '2007-2009', company: 'ブラッスリーH×M モト・ロッソ', role: '店長', desc: '新規開業店のスペインバルの店長として立ち上げを担当。幅広い顧客層に対応し、教育・運営を確立。' },
-                  { year: '2009-2016', company: 'ベラビスタ境ガ浜', role: 'ラウンジ、イタリアン、レストランマネージャー→料飲部統括マネージャー', desc: 'リゾートホテルで"非日常体験"を設計し、高級空間に温かみを与える接客を実践。' },
-                  { year: '2016-2025', company: "L'Effervescence", role: 'メートル・ド・テール→アシスタントマネージャー→支配人', desc: '支配人として三つ星・グリーンスター継続を牽引。ブランド体験とチームマネジメントを統括。' }
-                ].map((item, index) => (
-                  <div key={index} style={{ borderLeft: `4px solid ${index % 2 === 0 ? 'var(--forest-green)' : 'var(--gold)'}`, paddingLeft: '30px' }}>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: '5px' }}>{item.year}</p>
-                    <h4 style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '3px' }}>{item.company}</h4>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: '10px' }}>{item.role}</p>
-                    <p style={{ fontSize: '0.9rem', lineHeight: '1.7', color: 'var(--text-dark)' }}>{item.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 5. 強み・実績 */}
-        <section id="page-4" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1200px', width: '100%' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>強み・実績</h2>
-            <GoldUnderline />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', marginTop: '60px' }}>
-              <div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '20px', borderBottom: '2px solid var(--forest-green)', paddingBottom: '10px' }}>主な実績</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {[
-                    'ミシュラン三つ星・グリーンスター獲得を支えた運営設計（6年）',
-                    'Impact Report制作主導',
-                    '組織開発・チームビルディング（10年以上）',
-                    'あらゆる価格帯・業態への適応力',
-                    '茶道10年：所作・間・余白の設計をサービス基準化'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px' }}>
-                      <span style={{ color: 'var(--forest-green)', fontSize: '1.2rem' }}>●</span>
-                      <span><strong>{item.split('（')[0]}</strong>{item.includes('（') && `（${item.split('（')[1]}`}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '20px', borderBottom: '2px solid var(--forest-green)', paddingBottom: '10px' }}>専門性</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {[
-                    '顧客体験デザイン（CX/EX設計）',
-                    '研修・教育プログラム設計',
-                    'ブランドづくり・コミュニケーション設計',
-                    'アドバイザー/トレーナーとしての伴走支援'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px' }}>
-                      <span style={{ color: 'var(--forest-green)', fontSize: '1.2rem' }}>●</span>
-                      <span><strong>{item}</strong></span>
-                    </li>
-                  ))}
-                </ul>
-                <div style={{ marginTop: '30px', background: 'white', padding: '20px', borderRadius: '8px' }}>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '15px', color: 'var(--text-dark)' }}>専門資格</h4>
-                  <ul style={{ fontSize: '0.9rem', lineHeight: '2', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <li style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <span style={{ color: 'var(--forest-green)' }}>●</span>
-                      <span>調理師免許</span>
-                    </li>
-                    <li style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <span style={{ color: 'var(--forest-green)' }}>●</span>
-                      <span>JSA認定ソムリエ</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 6. 提供サービス概要 */}
-        <section id="page-5" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '60px 40px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1200px', width: '100%' }}>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>提供サービス概要 ｜ 4つの柱</h2>
-            <GoldUnderline />
-            <p style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-gray)', marginTop: '25px', lineHeight: '1.8', maxWidth: '950px', margin: '25px auto 0' }}>
-              文化（Identity）を芯に据え、現場の技術（Service/Hospitality）で体験化。オペレーション（Operation）が再現性を支え、コミュニケーション（Relationship）が関係性とファンを育成。4つの循環で"人が変わっても価値が続く店"を実現します。
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '25px' : '35px', marginTop: '40px' }}>
-              {[
-                { num: '1', title: 'Service / Hospitality', subtitle: '技術と心の両輪を整える', desc: '言葉遣い・声の温度・間の使い方、所作・立ち姿・手の動きなど、茶道の身体技法を応用したサービス体系の構築と実践。', page: 6 },
-                { num: '2', title: 'Culture / Identity', subtitle: '存在理由を言語化し、文化を浸透', desc: 'ミッション・ビジョンの整理、価値観にもとづく判断基準の設定。店の哲学を共有し、自走する組織へと導きます。', page: 7 },
-                { num: '3', title: 'Operation / Team Support', subtitle: '動線と役割を最適化し再現性を確保', desc: '作業の重複・無駄を減らす配置設計、役割分担の明確化、品質チェック体制の構築。効率と品質の両立を実現します。', page: 8 },
-                { num: '4', title: 'Communication / Relationship', subtitle: '体験前後まで設計し、関係性を育てる', desc: '予約〜退店後までの体験設計、言葉のトーン統一、自然な紹介・再訪につながる接点づくり。地域・生産者との共創を促進します。', page: 9 }
-              ].map((service) => (
-                <div
-                  key={service.num}
-                  onClick={() => scrollToPage(service.page)}
-                  style={{
-                    border: '2px solid rgba(61, 90, 60, 0.2)',
-                    borderRadius: '8px',
-                    padding: '25px',
-                    background: 'white',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    position: 'relative'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'var(--forest-green)';
-                    e.currentTarget.style.borderColor = 'var(--forest-green)';
-                    e.currentTarget.style.transform = 'translateY(-5px)';
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(61, 90, 60, 0.3)';
-                    const title = e.currentTarget.querySelector('h3') as HTMLElement;
-                    const subtitle = e.currentTarget.querySelectorAll('p')[0] as HTMLElement;
-                    const desc = e.currentTarget.querySelectorAll('p')[1] as HTMLElement;
-                    if (title) title.style.color = 'white';
-                    if (subtitle) subtitle.style.color = 'rgba(255, 255, 255, 0.9)';
-                    if (desc) desc.style.color = 'rgba(255, 255, 255, 0.95)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'white';
-                    e.currentTarget.style.borderColor = 'rgba(61, 90, 60, 0.2)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                    const title = e.currentTarget.querySelector('h3') as HTMLElement;
-                    const subtitle = e.currentTarget.querySelectorAll('p')[0] as HTMLElement;
-                    const desc = e.currentTarget.querySelectorAll('p')[1] as HTMLElement;
-                    if (title) title.style.color = 'var(--text-dark)';
-                    if (subtitle) subtitle.style.color = 'var(--text-gray)';
-                    if (desc) desc.style.color = 'var(--text-dark)';
-                  }}
-                >
-                  <div style={{ width: '45px', height: '45px', borderRadius: '50%', background: 'var(--forest-green)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 'bold', marginBottom: '16px' }}>{service.num}</div>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '8px', transition: 'color 0.3s ease' }}>{service.title}</h3>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-gray)', fontWeight: '500', marginBottom: '12px', transition: 'color 0.3s ease' }}>{service.subtitle}</p>
-                  <p style={{ fontSize: '0.87rem', color: 'var(--text-dark)', lineHeight: '1.7', transition: 'color 0.3s ease' }}>{service.desc}</p>
-                  <div style={{ position: 'absolute', bottom: '18px', right: '18px', fontSize: '1.4rem', color: 'var(--gold)' }}>→</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* 7. サービス詳細① - Service / Hospitality */}
-        <section id="page-6" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1200px', width: '100%' }}>
-            <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'var(--forest-green)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold', margin: '0 auto 20px' }}>1</div>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '10px' }}>Service / Hospitality</h2>
-            <GoldUnderline />
-
-            <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px' }}>
-              <div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>サービス（技術）</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {[
-                    '言葉遣い・声の温度・間の取り方',
-                    '所作・立ち姿・手の動きの整え方',
-                    '無駄を減らした動線と提供タイミング',
-                    '役割・ポジション・フローの設計',
-                    'テーブルコントロール／予約・席数調整・料理提供のタイミング'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--forest-green)', fontSize: '1.2rem', lineHeight: '1.5' }}>●</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div style={{ marginTop: '30px', background: 'var(--beige-dark)', padding: '25px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)' }}>
-                    お客様にとって心地よい"見え方・伝わり方"をつくるため、立ち位置や動作、手の動きまで丁寧に整えます。
-                  </p>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', marginTop: '15px' }}>
-                    サービスを「誰がやっても同じ品質で届けられる状態」へと導きます。
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>ホスピタリティ（心）</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {[
-                    '"人として出会う" 姿勢（笑顔、安心感）',
-                    'ゲストの声に丁寧に耳を傾け、心に安らぎをもたらす',
-                    '相手の状態を読み取り、緊張 → 安心 → 信頼へ導く',
-                    'まわりへの気づきと、先回りの配慮（言われる前に"必要なひと手間"をして差し上げる）',
-                    '過不足のない"ちょうど良い"配慮で、ゲストの時間を大切にする'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--forest-green)', fontSize: '1.2rem', lineHeight: '1.5' }}>●</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div style={{ marginTop: '30px', background: 'rgba(255, 255, 255, 0.7)', padding: '25px', borderRadius: '8px', border: '2px solid var(--gold)', borderLeft: '4px solid var(--gold)' }}>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '15px', color: 'var(--forest-green)' }}>おもてなしの本質</h4>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)' }}>
-                    料理や空間の価値は、人を通して初めて伝わります。
-                  </p>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', marginTop: '10px' }}>
-                    想いを受け取り、丁寧に手渡すその瞬間に、お店の価値が育まれます。
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 8. サービス詳細② - Culture / Identity */}
-        <section id="page-7" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1200px', width: '100%' }}>
-            <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'var(--forest-green)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold', margin: '0 auto 20px' }}>2</div>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '10px' }}>Culture / Identity構築</h2>
-            <GoldUnderline />
-
-            <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px' }}>
-              <div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>ブランドの芯を明確にする</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {[
-                    '「大切にしたい価値観」を言語化する',
-                    'ゲストにどんな価値を届けるのかを明確にする',
-                    '価値観 → 行動基準 に落とし込む',
-                    'スタッフ全員が理解し、再現できる状態にする'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--forest-green)', fontSize: '1.2rem', lineHeight: '1.5' }}>●</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div style={{ marginTop: '30px', background: 'var(--beige-dark)', padding: '25px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)' }}>
-                    お店の価値観や哲学を、誰もが動ける行動レベルに翻訳し、現場に定着させます。
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px' }}>文化を共有する仕組み作り</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '2', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {[
-                    '大切にする価値観を全員で共有する',
-                    '接客・サービスの行動基準を明確にする',
-                    '属人化をなくし、再現性のある"型"をつくる（ルールブック化）',
-                    'スタッフが自分の役割に価値を感じられる状態をつくる',
-                    '朝礼・ミーティングを"文化を育てる時間"として再設計'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--forest-green)', fontSize: '1.2rem', lineHeight: '1.5' }}>●</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div style={{ marginTop: '40px', background: 'rgba(255, 255, 255, 0.7)', padding: '30px', borderRadius: '12px', border: '2px solid var(--gold)', borderLeft: '4px solid var(--forest-green)' }}>
-              <h4 style={{ fontSize: '1.2rem', fontWeight: '600', marginBottom: '15px', color: 'var(--forest-green)' }}>自走する組織への転換</h4>
-              <p style={{ fontSize: '0.95rem', lineHeight: '1.9', color: 'var(--text-dark)' }}>
-                自走する組織とは、価値観と行動基準を明確にし、判断軸を共有することで、各自が主体的に動ける状態をつくることです。
-              </p>
-              <p style={{ fontSize: '0.95rem', lineHeight: '1.9', color: 'var(--text-dark)', marginTop: '10px' }}>
-                指示待ちから脱却し、組織として継続的に成果を生み出せる体制へと変わっていきます。
-              </p>
-            </div>
-          </div>
-        </section>
-        {/* 9. サービス詳細③ - Operation / Team Support */}
-        <section id="page-8" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '60px 40px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1200px', width: '100%' }}>
-            <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'var(--forest-green)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold', margin: '0 auto 20px' }}>3</div>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '10px' }}>Operation / Team Support</h2>
-            <GoldUnderline />
-
-            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
-              <div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '20px' }}>提供フローと動線の最適化</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {[
-                    '営業中の立ち位置・動き方の整理',
-                    'ピーク時に対応できる動線と配置の設計',
-                    '作業の重複や役割の偏りが出ないよう配置を見直す',
-                    'だれでも迷わず動けるオペレーション表の作成',
-                    'キッチンとサービスの連携強化による提供のスムーズ化'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--forest-green)', fontSize: '1.2rem', lineHeight: '1.5' }}>●</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div style={{ marginTop: '20px', background: 'var(--beige-dark)', padding: '20px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.8', color: 'var(--text-dark)' }}>
-                    現場の動きをシンプルに整え、最小の動きで最大の成果が出るオペレーションをつくります。
-                  </p>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.8', color: 'var(--text-dark)', marginTop: '10px' }}>
-                    ムダのない流れが生まれることで、チーム全体が落ち着いて働ける環境が整います。
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '20px' }}>負担の偏りを防ぐ仕組み</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {[
-                    '役割・担当・作業手順の明確化',
-                    '適切な予約数・席数の管理',
-                    'サービスと料理の品質チェック体制',
-                    '毎日の振り返り → 改善の習慣づくり'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--forest-green)', fontSize: '1.2rem', lineHeight: '1.5' }}>●</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginTop: '25px', marginBottom: '20px' }}>品質の再現性をつくる</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {[
-                    'スタッフの能力差に左右されない接客基準づくり',
-                    '新人が迷わない育成ステップの明確化（マニュアル整備）',
-                    'マネージャー／リーダー育成：スタッフの個人差をならす仕組みづくり'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--gold)', fontSize: '1.2rem', lineHeight: '1.5' }}>●</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div style={{ marginTop: '30px', background: 'rgba(255, 255, 255, 0.7)', padding: '24px', borderRadius: '12px', border: '2px solid var(--gold)', borderLeft: '4px solid var(--forest-green)' }}>
-              <p style={{ fontSize: '0.95rem', lineHeight: '1.8', color: 'var(--text-dark)', fontWeight: '600' }}>
-                誰が入っても同じ"感じの良さ"が再現できる状態をつくります。
-              </p>
-              <p style={{ fontSize: '0.95rem', lineHeight: '1.8', color: 'var(--text-dark)', marginTop: '10px' }}>
-                属人化をなくし、店舗の世界観と品質を安定させるための基盤づくりです。
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* 10. サービス詳細④ - Communication / Relationship */}
-        <section id="page-9" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '60px 40px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1200px', width: '100%' }}>
-            <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'var(--forest-green)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold', margin: '0 auto 20px' }}>4</div>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '10px' }}>Communication / Relationship</h2>
-            <GoldUnderline />
-
-            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
-              <div>
-                <h3 style={{ fontSize: '1.4rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '20px' }}>ゲストとの関係を育てる（リピーターづくり）</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {[
-                    '予約〜来店〜退店後まで一貫した体験の流れをつくる',
-                    '初来店・常連に合わせた声かけやご案内の工夫',
-                    '期待感を高める情報発信（SNS／メール／メニュー説明）',
-                    'ゲストが安心して任せられるコミュニケーション設計'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--forest-green)', fontSize: '1.2rem', lineHeight: '1.5' }}>●</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div style={{ marginTop: '18px', background: 'var(--beige-dark)', padding: '16px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
-                  <p style={{ fontSize: '0.85rem', lineHeight: '1.7', color: 'var(--text-dark)', fontStyle: 'italic' }}>
-                    初めての方にも常連の方にも、「また来たい」と思ってもらえる体験を整えます。
-                  </p>
-                </div>
-
-                <h3 style={{ fontSize: '1.4rem', fontWeight: '600', color: 'var(--forest-green)', marginTop: '28px', marginBottom: '20px' }}>スタッフ間のコミュニケーション強化</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {[
-                    '言葉遣い・トーンの統一',
-                    '引き継ぎや共有の仕組みづくり',
-                    '情報が曖昧にならないための連携ルール',
-                    'スタッフの判断が揃う"共通言語"づくり'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--forest-green)', fontSize: '1.2rem', lineHeight: '1.5' }}>●</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div style={{ marginTop: '16px', background: 'var(--beige-dark)', padding: '16px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
-                  <p style={{ fontSize: '0.85rem', lineHeight: '1.7', color: 'var(--text-dark)', fontStyle: 'italic' }}>
-                    スタッフ同士の連携がスムーズになり、サービスの質が安定します。
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <h3 style={{ fontSize: '1.4rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '20px' }}>生産者・地域とつながる関係性づくり</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {[
-                    '生産者のストーリーを自然に紹介できる仕組み',
-                    '地域やコミュニティとの協働の土台づくり',
-                    'お客様の「物語」を大切にする姿勢',
-                    '店の活動が生産者・地域に還元されていく循環づくり'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--forest-green)', fontSize: '1.2rem', lineHeight: '1.5' }}>●</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div style={{ marginTop: '18px', background: 'var(--beige-dark)', padding: '16px', borderRadius: '8px', border: '2px solid rgba(212, 163, 115, 0.3)' }}>
-                  <p style={{ fontSize: '0.85rem', lineHeight: '1.7', color: 'var(--text-dark)', fontStyle: 'italic' }}>
-                    "料理の背景" と "地域の力" が伝わり、店の価値が深まり続ける関係性をつくります。
-                  </p>
-                </div>
-
-                <h3 style={{ fontSize: '1.4rem', fontWeight: '600', color: 'var(--forest-green)', marginTop: '28px', marginBottom: '20px' }}>背景を語れる店づくり（まとめ）</h3>
-                <ul style={{ fontSize: '0.9rem', lineHeight: '1.9', color: 'var(--text-dark)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {[
-                    '料理の背景・生産者の想いを言葉にする',
-                    '地域とのつながりを見える形で発信する',
-                    '「この店で過ごす意味」をお客様に届ける'
-                  ].map((item, index) => (
-                    <li key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--gold)', fontSize: '1.2rem', lineHeight: '1.5' }}>●</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div style={{ marginTop: '18px', background: 'rgba(255, 255, 255, 0.9)', padding: '20px', borderRadius: '8px', border: '2px solid var(--gold)' }}>
-                  <p style={{ fontSize: '0.95rem', lineHeight: '1.7', color: 'var(--text-dark)', fontWeight: '600', textAlign: 'center' }}>
-                    店の個性と世界観が伝わり、ファンが育つ状態へ。
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 11. 実施プロセス */}
-        <section id="page-10" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1300px', width: '100%' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>実施プロセス</h2>
-            <GoldUnderline />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '30px', marginTop: '70px' }}>
-              {[
-                { num: '1', title: 'ヒアリング', subtitle: '現状・想いの把握', desc: 'まずはお店の現状や、経営者・スタッフの皆さまが大切にしている想いを丁寧に伺います。' },
-                { num: '2', title: '現場視察・体験分析', subtitle: '強みと改善点を具体化', desc: '実際に店舗を訪問し、サービス、空間、お客様体験を多角的に分析します。' },
-                { num: '3', title: '改善提案・研修設計', subtitle: '店"らしさ"を軸に再現可能な型へ', desc: '形式的なマニュアルではなく、貴店ならではの"らしさ"が伝わる行動基準を設計します。' },
-                { num: '4', title: '実施・フォロー', subtitle: '定着支援と再評価', desc: '研修後のフォローを通じて、習慣化とチームの行動変化をサポートします。' }
-              ].map((step) => (
-                <div key={step.num} style={{ textAlign: 'center' }}>
-                  <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--forest-green)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', fontWeight: 'bold', margin: '0 auto 20px' }}>{step.num}</div>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: '600', marginBottom: '15px' }}>{step.title}</h3>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-gray)', marginBottom: '15px', fontWeight: '500' }}>{step.subtitle}</p>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-dark)', lineHeight: '1.7', background: 'rgba(255,255,255,0.5)', padding: '15px', borderRadius: '8px', minHeight: '120px' }}>{step.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* 12. 料金プラン */}
-        <section id="page-11" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1200px', width: '100%' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '15px' }}>料金・期間の目安</h2>
-            <GoldUnderline />
-            <p style={{ textAlign: 'center', fontSize: '0.95rem', color: 'var(--text-gray)', marginTop: '25px' }}>
-              お客様のニーズや店舗規模に合わせて、最適なサポートプランをご提案いたします。
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '30px', marginTop: '50px' }}>
-              {[
-                {
-                  name: 'スポットトレーニング',
-                  price: '¥30,000〜',
-                  duration: '1回（約2時間）',
-                  highlight: false,
-                  details: [
-                    '現状の課題や目標をヒアリングし、改善ポイントを整理',
-                    '店舗の特徴に合った接客・サービス改善案の提示',
-                    '所作/声の使い方/提供順など"再現しやすい型"のミニレクチャー',
-                    '課題テーマに応じた短時間のトレーニング'
-                  ],
-                  note: 'まずは気になる部分から整えてまいります。'
-                },
-                {
-                  name: '終日サポート',
-                  price: '¥100,000',
-                  duration: '1日（約8時間）/ 回',
-                  highlight: true,
-                  details: [
-                    '営業中のサービス現場に同席し、リアルタイムでフィードバック',
-                    'ホール動線・提供の流れ・チーム連携のチェック',
-                    'オペレーション構築のアドバイス/改善案',
-                    '特別な場面（VIP対応・イベント）の事前準備から当日の最適化まで'
-                  ],
-                  note: '実際の現場において成功に導くための支援をいたします。'
-                },
-                {
-                  name: 'チーム育成サポート',
-                  price: '¥200,000〜400,000',
-                  duration: '月額制（4〜6回の訪問）',
-                  highlight: false,
-                  details: [
-                    '定期的な研修・コーチングで着実なスキルアップを支援',
-                    '営業日の実践指導で"現場で使える力"を育成',
-                    '振り返りと改善提案を通じて、サービス品質を継続的に向上',
-                    '中長期的な組織成長・サービス文化づくり'
-                  ],
-                  note: '現場の力を底上げし、組織の"サービス文化"が根づく状態を目指します。'
-                }
-              ].map((plan, index) => (
-                <div key={index} style={{ border: plan.highlight ? '3px solid var(--gold)' : '2px solid #ddd', borderRadius: '12px', padding: '30px 20px', background: 'white', textAlign: 'center', position: 'relative', transform: plan.highlight ? 'scale(1.05)' : 'scale(1)', boxShadow: plan.highlight ? '0 8px 24px rgba(0,0,0,0.15)' : 'none' }}>
-                  {plan.highlight && <div style={{ position: 'absolute', top: '-15px', left: '50%', transform: 'translateX(-50%)', background: 'var(--gold)', color: 'white', padding: '5px 20px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold' }}>おすすめ</div>}
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '20px', color: 'var(--text-dark)' }}>{plan.name}</h3>
-                  <p style={{ fontSize: '2.3rem', fontWeight: 'bold', color: 'var(--gold)', marginBottom: '8px' }}>{plan.price}</p>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: '25px' }}>{plan.duration}</p>
-                  <div style={{ borderTop: '2px solid var(--gold)', paddingTop: '20px', fontSize: '0.8rem', color: 'var(--text-dark)', textAlign: 'left', lineHeight: '1.7' }}>
-                    {plan.details.map((detail, i) => (
-                      <p key={i} style={{ marginBottom: '10px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                        <span style={{ color: 'var(--forest-green)', flexShrink: 0 }}>◆</span>
-                        <span>{detail}</span>
-                      </p>
-                    ))}
-                    <div style={{ marginTop: '15px', padding: '15px', background: 'var(--beige)', borderRadius: '6px', borderLeft: '3px solid var(--forest-green)' }}>
-                      <p style={{ fontSize: '0.75rem', lineHeight: '1.6', fontStyle: 'italic', color: 'var(--text-dark)' }}>{plan.note}</p>
+                  { year: '1999–2007', company: 'オーベルジュ・オー・ミラドー', role: 'ギャルソン、ポーター、シェフ・ド・ラン', desc: 'クラシックなフランス式サービスを体系的に学び、料理を最大限に引き立てる顧客体験を習得。' },
+                  { year: '2007–2009', company: 'ブラッスリーH×M モト・ロッソ', role: '店長', desc: '新規開業スペインバルの店長として立ち上げを担当。幅広い顧客層に対応し、教育・運営体制を確立。' },
+                  { year: '2009–2016', company: 'ベラビスタ境ガ浜', role: 'ラウンジ、イタリアン、レストランマネージャー → 料飲部統括マネージャー', desc: 'リゾートホテルで"非日常体験"を設計し、高級空間に温かみを与える接客を実践。' },
+                  { year: '2016–2025', company: "L'Effervescence", role: 'メートル・ド・テール → アシスタントマネージャー → 支配人', desc: '支配人として三つ星・グリーンスター継続を牽引。ブランド体験とチームマネジメントを統括。' },
+                ].map((item, i, arr) => (
+                  <div key={i} style={{ display: 'flex', gap: '24px', paddingBottom: i < arr.length - 1 ? '32px' : '0' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                      <div style={{ width: '14px', height: '14px', borderRadius: '50%', marginTop: '4px', background: i % 2 === 0 ? 'var(--forest-green)' : 'var(--gold)', border: '3px solid white', boxShadow: `0 0 0 2px ${i % 2 === 0 ? 'var(--forest-green)' : 'var(--gold)'}` }} />
+                      {i < arr.length - 1 && <div style={{ width: '2px', flex: 1, background: 'rgba(61,90,60,0.18)', marginTop: '8px' }} />}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '0.73rem', color: 'var(--gold)', fontWeight: '700', marginBottom: '4px' }}>{item.year}</p>
+                      <h4 style={{ fontSize: '0.98rem', fontWeight: '700', color: 'var(--text-dark)', marginBottom: '3px' }}>{item.company}</h4>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-gray)', marginBottom: '8px' }}>{item.role}</p>
+                      <p style={{ fontSize: '0.86rem', lineHeight: '1.75', color: 'var(--text-dark)' }}>{item.desc}</p>
                     </div>
                   </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── SERVICES with images ── */}
+        <section id="services" style={sec('white')}>
+          <div style={wrap}>
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <SLabel t="SERVICES" />
+              <STitle t="提供サービス" />
+              <Divider />
+              <p style={{ marginTop: '20px', fontSize: '0.93rem', color: 'var(--text-gray)', lineHeight: '1.85', maxWidth: '680px', margin: '20px auto 0' }}>
+                文化（Identity）を芯に据え、現場の技術（Service）で体験化。オペレーション（Operation）が再現性を支え、コミュニケーション（Relationship）が関係性とファンを育成します。
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '24px', marginTop: '52px' }}>
+              {services.map((service, i) => (
+                <div key={i} style={{
+                  background: expandedService === i ? 'linear-gradient(135deg, #2a4228, #3d5a3c)' : 'white',
+                  border: `2px solid ${expandedService === i ? 'transparent' : 'rgba(61,90,60,0.12)'}`,
+                  borderRadius: '16px', overflow: 'hidden', transition: 'all 0.35s ease',
+                  boxShadow: expandedService === i ? '0 12px 40px rgba(61,90,60,0.28)' : '0 4px 20px rgba(0,0,0,0.05)',
+                }}>
+                  {/* Card image */}
+                  <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={service.image} alt={service.title} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.6s ease' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.06)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                    />
+                    {expandedService === i && <div style={{ position: 'absolute', inset: 0, background: 'rgba(26,42,26,0.55)' }} />}
+                    <div style={{
+                      position: 'absolute', top: '14px', left: '14px',
+                      width: '38px', height: '38px', borderRadius: '50%',
+                      background: expandedService === i ? 'var(--gold)' : 'rgba(255,255,255,0.92)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '1.05rem', fontWeight: '700',
+                      color: expandedService === i ? 'white' : 'var(--forest-green)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                    }}>{service.num}</div>
+                  </div>
+
+                  {/* Expand button */}
+                  <button onClick={() => setExpandedService(expandedService === i ? null : i)} style={{
+                    width: '100%', padding: '22px 24px', display: 'flex', alignItems: 'flex-start',
+                    gap: '16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '0.72rem', fontWeight: '700', letterSpacing: '0.1em', color: expandedService === i ? 'rgba(255,255,255,0.65)' : 'var(--gold)', marginBottom: '5px' }}>{service.subtitle}</p>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: expandedService === i ? 'white' : 'var(--text-dark)', marginBottom: '8px' }}>{service.title}</h3>
+                      <p style={{ fontSize: '0.86rem', lineHeight: '1.7', color: expandedService === i ? 'rgba(255,255,255,0.8)' : 'var(--text-gray)' }}>{service.desc}</p>
+                    </div>
+                    <span style={{ fontSize: '1.2rem', flexShrink: 0, marginTop: '4px', color: expandedService === i ? 'white' : 'var(--forest-green)', transition: 'transform 0.3s ease', transform: expandedService === i ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>↓</span>
+                  </button>
+
+                  {expandedService === i && (
+                    <div style={{ padding: '0 24px 24px' }}>
+                      <div style={{ borderTop: '1px solid rgba(255,255,255,0.18)', paddingTop: '16px' }}>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {service.details.map((d, j) => (
+                            <li key={j} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.86rem', color: 'rgba(255,255,255,0.88)', lineHeight: '1.65' }}>
+                              <span style={{ color: 'var(--gold)', flexShrink: 0, marginTop: '2px', fontWeight: '700' }}>✓</span>
+                              <span>{d}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-            <p style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-gray)', marginTop: '40px' }}>
+          </div>
+        </section>
+
+        {/* ── PROCESS ── */}
+        <section id="process" style={sec('var(--beige)')}>
+          <div style={wrap}>
+            <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+              <SLabel t="HOW IT WORKS" />
+              <STitle t="実施プロセス" />
+              <Divider />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: isMobile ? '28px' : '0', position: 'relative' }}>
+              {!isMobile && <div style={{ position: 'absolute', top: '36px', left: '12.5%', right: '12.5%', height: '2px', background: 'linear-gradient(to right, var(--forest-green), var(--gold))', zIndex: 0 }} />}
+              {processSteps.map((step, i) => (
+                <div key={i} style={{ textAlign: 'center', position: 'relative', zIndex: 1, padding: isMobile ? '0' : '0 20px' }}>
+                  <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--forest-green), #5a7a59)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: '700', margin: '0 auto 22px', border: '4px solid var(--beige)', boxShadow: '0 4px 18px rgba(61,90,60,0.3)' }}>{step.num}</div>
+                  <h3 style={{ fontSize: '0.97rem', fontWeight: '700', color: 'var(--text-dark)', marginBottom: '12px', lineHeight: '1.4' }}>{step.title}</h3>
+                  <p style={{ fontSize: '0.84rem', lineHeight: '1.75', color: 'var(--text-gray)', background: 'white', padding: '16px', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>{step.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── PRICING ── */}
+        <section id="pricing" style={{
+          padding: isMobile ? '72px 20px' : '100px 40px',
+          background: 'linear-gradient(160deg, #1a2b19 0%, #243822 60%, #2e4a2c 100%)',
+        }}>
+          <div style={wrap}>
+            {/* Heading */}
+            <div style={{ textAlign: 'center', marginBottom: isMobile ? '52px' : '72px' }}>
+              <p style={{ fontSize: '0.68rem', fontWeight: '700', letterSpacing: '0.32em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: '16px' }}>PRICING</p>
+              <h2 style={{ fontSize: isMobile ? '1.7rem' : '2.4rem', fontWeight: '700', color: 'white', marginBottom: '20px', lineHeight: '1.3' }}>
+                料金・期間の目安
+              </h2>
+              <div style={{ width: '48px', height: '2px', background: 'var(--gold)', margin: '0 auto 20px' }} />
+              <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em' }}>
+                お客様のニーズや店舗規模に合わせて、最適なプランをご提案いたします。
+              </p>
+            </div>
+
+            {isMobile ? (
+              /* Mobile: vertical list */
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {plans.map((plan, i) => (
+                  <div key={i}
+                    onMouseEnter={() => setHoveredPlan(i)}
+                    onMouseLeave={() => setHoveredPlan(null)}
+                    style={{
+                      padding: '36px 16px',
+                      borderBottom: i < plans.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                      position: 'relative',
+                      borderLeft: hoveredPlan === i ? '3px solid var(--gold)' : '3px solid transparent',
+                      background: hoveredPlan === i ? 'rgba(212,163,115,0.07)' : 'transparent',
+                      transition: 'all 0.3s ease',
+                      borderRadius: '4px',
+                    }}>
+                    {plan.highlight && (
+                      <p style={{ fontSize: '0.62rem', fontWeight: '700', letterSpacing: '0.2em', color: 'var(--gold)', marginBottom: '12px' }}>— RECOMMENDED</p>
+                    )}
+                    <p style={{ fontSize: '0.68rem', fontWeight: '700', letterSpacing: '0.2em', color: plan.highlight ? 'var(--gold)' : 'rgba(255,255,255,0.4)', marginBottom: '6px' }}>PLAN 0{i + 1}</p>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white', marginBottom: '12px' }}>{plan.name}</h3>
+                    <p style={{ fontSize: '2rem', fontWeight: '700', color: plan.highlight ? 'var(--gold)' : 'white', marginBottom: '4px', lineHeight: '1.1' }}>{plan.price}</p>
+                    <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', marginBottom: '24px' }}>{plan.duration}</p>
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {plan.details.map((d, j) => (
+                        <div key={j} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                          <span style={{ color: 'var(--gold)', flexShrink: 0, marginTop: '1px' }}>—</span>
+                          <span style={{ fontSize: '0.85rem', lineHeight: '1.7', color: 'rgba(255,255,255,0.75)' }}>{d}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p style={{ fontSize: '0.8rem', lineHeight: '1.7', fontStyle: 'italic', color: 'rgba(255,255,255,0.4)', marginTop: '18px' }}>{plan.note}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* Desktop: 3-column open grid */
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                borderTop: '1px solid rgba(255,255,255,0.12)',
+              }}>
+                {plans.map((plan, i) => {
+                  const isHovered = hoveredPlan === i;
+                  return (
+                  <div key={i}
+                    onMouseEnter={() => setHoveredPlan(i)}
+                    onMouseLeave={() => setHoveredPlan(null)}
+                    style={{
+                      padding: '48px 40px',
+                      borderRight: i < plans.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                      position: 'relative',
+                      background: isHovered ? 'rgba(212,163,115,0.09)' : 'transparent',
+                      transition: 'background 0.35s ease, box-shadow 0.35s ease',
+                      boxShadow: isHovered ? 'inset 0 -3px 0 rgba(212,163,115,0.6)' : 'none',
+                      cursor: 'default',
+                    }}>
+                    {/* Gold top accent — wider on hover */}
+                    <div style={{
+                      position: 'absolute', top: 0, left: '40px',
+                      width: isHovered ? '80px' : (plan.highlight ? '56px' : '32px'),
+                      height: plan.highlight ? '3px' : '2px',
+                      background: 'var(--gold)',
+                      transition: 'width 0.35s ease',
+                    }} />
+
+                    {/* RECOMMENDED badge */}
+                    {plan.highlight && (
+                      <p style={{ fontSize: '0.62rem', fontWeight: '700', letterSpacing: '0.22em', color: 'var(--gold)', marginBottom: '14px' }}>— RECOMMENDED</p>
+                    )}
+
+                    {/* Ghost plan number — brighter on hover */}
+                    <p style={{
+                      fontSize: '2.2rem', fontWeight: '700',
+                      color: isHovered ? 'rgba(212,163,115,0.42)' : 'rgba(212,163,115,0.18)',
+                      marginBottom: plan.highlight ? '12px' : '20px',
+                      letterSpacing: '0.05em', lineHeight: '1',
+                      transition: 'color 0.35s ease',
+                    }}>0{i + 1}</p>
+
+                    {/* Plan label */}
+                    <p style={{ fontSize: '0.68rem', fontWeight: '700', letterSpacing: '0.2em', color: plan.highlight || isHovered ? 'var(--gold)' : 'rgba(255,255,255,0.4)', marginBottom: '8px', transition: 'color 0.35s ease' }}>PLAN</p>
+
+                    {/* Plan name */}
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'white', marginBottom: '20px', lineHeight: '1.4' }}>{plan.name}</h3>
+
+                    {/* Price */}
+                    <p style={{
+                      fontSize: '2.2rem', fontWeight: '700',
+                      color: plan.highlight || isHovered ? 'var(--gold)' : 'white',
+                      marginBottom: '4px', lineHeight: '1.1',
+                      transition: 'color 0.35s ease',
+                    }}>{plan.price}</p>
+                    <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', marginBottom: '28px', letterSpacing: '0.03em' }}>{plan.duration}</p>
+
+                    {/* Divider */}
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {plan.details.map((d, j) => (
+                        <div key={j} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                          <span style={{ color: 'var(--gold)', flexShrink: 0, marginTop: '2px', fontSize: '0.85rem' }}>—</span>
+                          <span style={{ fontSize: '0.84rem', lineHeight: '1.72', color: isHovered ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.72)', transition: 'color 0.35s ease' }}>{d}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Note */}
+                    <p style={{ fontSize: '0.78rem', lineHeight: '1.72', fontStyle: 'italic', color: 'rgba(255,255,255,0.38)', marginTop: '20px' }}>{plan.note}</p>
+
+                    {/* Hover CTA */}
+                    <div style={{
+                      marginTop: '28px',
+                      opacity: isHovered ? 1 : 0,
+                      transform: isHovered ? 'translateY(0)' : 'translateY(6px)',
+                      transition: 'opacity 0.3s ease, transform 0.3s ease',
+                    }}>
+                      <button onClick={() => scrollTo('contact')} style={{
+                        width: '100%', padding: '10px 0',
+                        fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.12em',
+                        color: 'var(--gold)', background: 'transparent',
+                        border: '1px solid rgba(212,163,115,0.5)', borderRadius: '50px',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                        transition: 'all 0.25s ease',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'white'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)'; }}>
+                        このプランで相談する →
+                      </button>
+                    </div>
+                  </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <p style={{ textAlign: 'center', fontSize: '0.78rem', color: 'rgba(255,255,255,0.3)', marginTop: '48px', letterSpacing: '0.04em' }}>
               ※ 料金は店舗規模や内容により調整いたします。まずはお気軽にご相談ください。
             </p>
           </div>
         </section>
 
-        {/* 13. 年間スケジュール（例） */}
-        <section id="page-12" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '80px 60px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1400px', width: '100%' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>年間スケジュール（例）</h2>
-            <GoldUnderline />
-
-            <div style={{ marginTop: '50px', display: 'flex', flexDirection: 'column', gap: '0' }}>
-              {/* タイムライン */}
-              <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 1fr 1fr 1fr', gap: '0', borderBottom: '3px solid var(--forest-green)' }}>
-                <div style={{ padding: '15px 20px', background: 'var(--forest-green)', color: 'white', fontWeight: 'bold', fontSize: '1rem', textAlign: 'center' }}></div>
-                <div style={{ padding: '15px 20px', background: 'var(--forest-green)', color: 'white', fontWeight: 'bold', fontSize: '1rem', textAlign: 'center', borderLeft: '2px solid white' }}>開始〜3ヶ月</div>
-                <div style={{ padding: '15px 20px', background: 'var(--forest-green)', color: 'white', fontWeight: 'bold', fontSize: '1rem', textAlign: 'center', borderLeft: '2px solid white' }}>4〜6ヶ月</div>
-                <div style={{ padding: '15px 20px', background: 'var(--forest-green)', color: 'white', fontWeight: 'bold', fontSize: '1rem', textAlign: 'center', borderLeft: '2px solid white' }}>6〜8ヶ月</div>
-                <div style={{ padding: '15px 20px', background: 'var(--forest-green)', color: 'white', fontWeight: 'bold', fontSize: '1rem', textAlign: 'center', borderLeft: '2px solid white' }}>9〜12ヶ月</div>
-              </div>
-
-              {/* Service Hospitality */}
-              <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 1fr 1fr 1fr', gap: '0', borderBottom: '2px solid rgba(61, 90, 60, 0.2)' }}>
-                <div style={{ padding: '20px', background: 'rgba(61, 90, 60, 0.1)', fontWeight: '600', fontSize: '0.95rem', display: 'flex', alignItems: 'center', borderRight: '2px solid rgba(61, 90, 60, 0.2)' }}>Service<br/>Hospitality</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)', borderRight: '1px solid rgba(61, 90, 60, 0.1)' }}>所作・立ち振る舞いの確認<br/>課題抽出<br/>サービスの基準設定</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)', borderRight: '1px solid rgba(61, 90, 60, 0.1)' }}>接客研修（言葉遣い/所作）<br/>ロールプレイ/フィードバックの設定<br/>来店メソッドによる体験検証</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)', borderRight: '1px solid rgba(61, 90, 60, 0.1)' }}>サービスクオリティの再現性<br/>チェックシート作成<br/>ロールプレイの習慣化</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)' }}>スタッフが教えられる状態へ<br/>チーム内サービストレーナー育成<br/>内製化の完成</div>
-              </div>
-
-              {/* Culture Identity */}
-              <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 1fr 1fr 1fr', gap: '0', borderBottom: '2px solid rgba(61, 90, 60, 0.2)' }}>
-                <div style={{ padding: '20px', background: 'rgba(61, 90, 60, 0.1)', fontWeight: '600', fontSize: '0.95rem', display: 'flex', alignItems: 'center', borderRight: '2px solid rgba(61, 90, 60, 0.2)' }}>Culture<br/>Identity</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)', borderRight: '1px solid rgba(61, 90, 60, 0.1)' }}>世界観・哲学の言語化<br/>サービススタンダードの骨組み作成<br/>コミュニケーションライン構築</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)', borderRight: '1px solid rgba(61, 90, 60, 0.1)' }}>価値観共有/浸透<br/>サービス哲学（"らしさ"）の言語化<br/>文化共有ミーティング設計</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)', borderRight: '1px solid rgba(61, 90, 60, 0.1)' }}>文化共有ミーティング実施<br/>スタッフ浸透支援<br/>体験への世界観落とし込み</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)' }}>自走状態へ移行<br/>世界観が"人"を通して再現されているかのチェック機構<br/>自走文化の土台づくり</div>
-              </div>
-
-              {/* Operation Team Support */}
-              <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 1fr 1fr 1fr', gap: '0', borderBottom: '2px solid rgba(61, 90, 60, 0.2)' }}>
-                <div style={{ padding: '20px', background: 'rgba(61, 90, 60, 0.1)', fontWeight: '600', fontSize: '0.95rem', display: 'flex', alignItems: 'center', borderRight: '2px solid rgba(61, 90, 60, 0.2)' }}>Operation<br/>Team Support</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)', borderRight: '1px solid rgba(61, 90, 60, 0.1)' }}>現場動線と業務負荷の確認<br/>ピーク時の流れ分析<br/>チームミーティング設計</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)', borderRight: '1px solid rgba(61, 90, 60, 0.1)' }}>負担偏りを防ぐオペレーション再設計<br/>動線改善/配置見直し<br/>仕組み・チェックリスト整備</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)', borderRight: '1px solid rgba(61, 90, 60, 0.1)' }}>マネージャー/リーダー育成支援<br/>改善サイクルの確立<br/>日々の振り返りの習慣化</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)' }}>現場運営を任せる段階へ<br/>自走改善が行われる仕組みへ<br/>内部サイクルの安定化</div>
-              </div>
-
-              {/* Communication Relationship */}
-              <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 1fr 1fr 1fr', gap: '0', borderBottom: '2px solid rgba(61, 90, 60, 0.2)' }}>
-                <div style={{ padding: '20px', background: 'rgba(61, 90, 60, 0.1)', fontWeight: '600', fontSize: '0.95rem', display: 'flex', alignItems: 'center', borderRight: '2px solid rgba(61, 90, 60, 0.2)' }}>Communication<br/>Relationship</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)', borderRight: '1px solid rgba(61, 90, 60, 0.1)' }}>顧客体験構築の整理<br/>予約・来店・退店フロー<br/>言葉・トーンの分析</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)', borderRight: '1px solid rgba(61, 90, 60, 0.1)' }}>言葉・トーン・伝え方の統一<br/>SNS/メニュー/メールの表現整備<br/>リレーション設計</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)', borderRight: '1px solid rgba(61, 90, 60, 0.1)' }}>リレーション&コミュニティ構築<br/>生産者/地域とのストーリー接続<br/>顧客理解の強化</div>
-                <div style={{ padding: '15px', fontSize: '0.75rem', lineHeight: '1.6', color: 'var(--text-dark)' }}>自然な紹介/リピート発生の仕組み完成<br/>コミュニティ形成<br/>生産者/地域との循環構築</div>
-              </div>
+        {/* ── CASES & TESTIMONIALS ── */}
+        <section id="cases" style={sec('var(--beige)')}>
+          <div style={wrap}>
+            <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+              <SLabel t="RESULTS" />
+              <STitle t="実績・お客様の声" />
+              <Divider />
             </div>
-          </div>
-        </section>
-
-        {/* 14. サービス事例・口コミ */}
-        <section id="page-13" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '60px 40px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1300px', width: '100%' }}>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>サービス事例・お客様の声</h2>
-            <GoldUnderline />
-
-            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '30px' : '35px' }}>
-              {/* サービス事例 */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '48px' }}>
               <div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px', textAlign: 'center', borderBottom: '3px solid var(--gold)', paddingBottom: '12px' }}>サービス事例</h3>
-
+                <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--forest-green)', marginBottom: '24px', paddingBottom: '12px', borderBottom: '2px solid var(--gold)' }}>サービス事例</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  {[
-                    {
-                      category: '高級レストラン',
-                      title: 'ミシュラン三つ星レストランの運営体制構築',
-                      desc: '支配人として6年間、サービス品質の向上と組織文化の浸透を統括。スタッフ育成プログラムの設計により、一貫した顧客体験を実現。グリーンスター獲得を含む持続可能な運営体制を確立しました。',
-                      tag: '組織開発'
-                    },
-                    {
-                      category: 'リゾートホテル',
-                      title: 'ホテル料飲部門の統括マネジメント',
-                      desc: 'ラウンジ、イタリアン、レストランの3部門を統括し、サービス基準の統一と効率化を実現。スタッフ教育体系の整備により、顧客満足度とリピート率が大幅に向上しました。',
-                      tag: 'マネジメント'
-                    },
-                    {
-                      category: '新規開業店',
-                      title: 'スペインバル立ち上げ・店長就任',
-                      desc: '新規開業のスペインバルにて、コンセプト設計からオペレーション構築、スタッフ採用・育成まで一貫して担当。幅広い顧客層に対応できる柔軟な接客体制を確立しました。',
-                      tag: '開業支援'
-                    }
-                  ].map((item, index) => (
-                    <div key={index} style={{ background: 'white', padding: '20px', borderRadius: '12px', border: '2px solid rgba(61, 90, 60, 0.1)', position: 'relative' }}>
-                      <div style={{ position: 'absolute', top: '-12px', left: '20px', background: 'var(--forest-green)', color: 'white', padding: '4px 14px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 'bold' }}>{item.tag}</div>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-gray)', marginBottom: '6px', marginTop: '5px' }}>{item.category}</p>
-                      <h4 style={{ fontSize: '1.05rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '10px', lineHeight: '1.5' }}>{item.title}</h4>
-                      <p style={{ fontSize: '0.87rem', color: 'var(--text-dark)', lineHeight: '1.7' }}>{item.desc}</p>
+                  {cases.map((item, i) => (
+                    <div key={i} style={{ background: 'white', padding: '24px', borderRadius: '14px', border: '1px solid rgba(61,90,60,0.08)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+                      <span style={{ display: 'inline-block', marginBottom: '10px', padding: '4px 14px', background: 'var(--forest-green)', color: 'white', borderRadius: '50px', fontSize: '0.68rem', fontWeight: '700' }}>{item.tag}</span>
+                      <p style={{ fontSize: '0.73rem', color: 'var(--text-gray)', marginBottom: '6px' }}>{item.category}</p>
+                      <h4 style={{ fontSize: '0.97rem', fontWeight: '700', color: 'var(--text-dark)', marginBottom: '10px', lineHeight: '1.5' }}>{item.title}</h4>
+                      <p style={{ fontSize: '0.84rem', lineHeight: '1.75', color: 'var(--text-gray)' }}>{item.desc}</p>
                     </div>
                   ))}
                 </div>
               </div>
-
-              {/* お客様の声 */}
               <div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '25px', textAlign: 'center', borderBottom: '3px solid var(--gold)', paddingBottom: '12px' }}>お客様の声</h3>
-
+                <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--forest-green)', marginBottom: '24px', paddingBottom: '12px', borderBottom: '2px solid var(--gold)' }}>お客様の声</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                  {[
-                    {
-                      name: 'A様',
-                      role: 'レストランオーナー',
-                      comment: '川畑さんの指導で、スタッフの意識が劇的に変わりました。形式的なマニュアルではなく、「なぜそうするのか」を理解させる手法が素晴らしく、自分で考えて動けるチームになりました。'
-                    },
-                    {
-                      name: 'B様',
-                      role: 'ホテル支配人',
-                      comment: '茶道の所作を取り入れた研修は目から鱗でした。立ち姿、手の動き、間の取り方まで、すべてに意味があることを学び、お客様からの評価も明らかに向上しています。'
-                    },
-                    {
-                      name: 'C様',
-                      role: 'カフェ経営者',
-                      comment: '開業前の相談から親身に対応していただきました。お店のコンセプト整理から、実際のオペレーション設計まで、現場目線でアドバイスいただけたことで、スムーズな立ち上げができました。'
-                    },
-                    {
-                      name: 'D様',
-                      role: '料理長',
-                      comment: 'サービスとキッチンの連携がうまくいかず悩んでいましたが、川畑さんの組織開発支援により、チーム全体の一体感が生まれました。今では互いをリスペクトし合える関係性が築けています。'
-                    }
-                  ].map((item, index) => (
-                    <div key={index} style={{ background: 'linear-gradient(135deg, rgba(248, 245, 242, 1) 0%, rgba(255, 255, 255, 1) 100%)', padding: '18px', borderRadius: '10px', border: '2px solid rgba(212, 163, 115, 0.3)', borderLeft: '4px solid var(--gold)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  {testimonials.map((item, i) => (
+                    <div key={i} style={{ background: 'white', padding: '22px', borderRadius: '14px', borderLeft: '4px solid var(--gold)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <div>
-                          <p style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-dark)' }}>{item.name}</p>
-                          <p style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{item.role}</p>
+                          <p style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-dark)' }}>{item.name}</p>
+                          <p style={{ fontSize: '0.73rem', color: 'var(--text-gray)' }}>{item.role}</p>
                         </div>
-                        <div style={{ color: 'var(--gold)', fontSize: '1.3rem' }}>★★★★★</div>
+                        <span style={{ color: 'var(--gold)', fontSize: '0.9rem', letterSpacing: '2px' }}>★★★★★</span>
                       </div>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-dark)', lineHeight: '1.7', fontStyle: 'italic' }}>
-                        "{item.comment}"
-                      </p>
+                      <p style={{ fontSize: '0.84rem', lineHeight: '1.82', color: 'var(--text-gray)', fontStyle: 'italic' }}>"{item.comment}"</p>
                     </div>
                   ))}
                 </div>
@@ -1055,189 +1004,125 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 15. お問い合わせ */}
-        <section id="page-14" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', scrollSnapAlign: 'start', background: 'var(--beige)', padding: '60px 40px' }}>
-          <CornerBoxes />
-          <div style={{ maxWidth: '1200px', width: '100%' }}>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px' }}>お問い合わせ</h2>
-            <GoldUnderline />
+        {/* ── FAQ ── */}
+        <section id="faq" style={sec('white')}>
+          <div style={{ ...wrap, maxWidth: '800px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+              <SLabel t="FAQ" />
+              <STitle t="よくある質問" />
+              <Divider />
+            </div>
+            {faqs.map((faq, i) => <FAQItem key={i} question={faq.question} answer={faq.answer} />)}
+          </div>
+        </section>
 
-            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '25px' : '30px' }}>
-              {/* お問い合わせフォーム */}
-              <div style={{ background: 'white', padding: '30px', borderRadius: '12px', border: '3px solid var(--gold)' }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--forest-green)', marginBottom: '20px', textAlign: 'center' }}>お問い合わせフォーム</h3>
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* ── CONTACT ── */}
+        <section id="contact" style={{ padding: isMobile ? '72px 20px' : '100px 40px', background: 'linear-gradient(135deg, #182818 0%, #2a4228 45%, #3d5a3c 100%)' }}>
+          <div style={wrap}>
+            <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+              <SLabel t="CONTACT" />
+              <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.4rem', fontWeight: '700', color: 'white', marginBottom: '20px' }}>お問い合わせ</h2>
+              <Divider />
+              <p style={{ marginTop: '20px', fontSize: '0.93rem', color: 'rgba(255,255,255,0.65)', lineHeight: '1.85' }}>サービス向上や組織づくりに関するご相談は、どうぞお気軽にお声がけください。</p>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '40px' }}>
+              <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: '20px', padding: isMobile ? '28px 20px' : '40px', border: '1px solid rgba(255,255,255,0.13)' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: '700', color: 'white', marginBottom: '28px' }}>メッセージを送る</h3>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  {[
+                    { label: 'お名前', key: 'name', type: 'text', required: true },
+                    { label: 'メールアドレス', key: 'email', type: 'email', required: true },
+                    { label: '電話番号', key: 'phone', type: 'tel', required: false },
+                  ].map((field) => (
+                    <div key={field.key}>
+                      <label style={{ display: 'block', fontSize: '0.83rem', fontWeight: '600', color: 'rgba(255,255,255,0.75)', marginBottom: '8px' }}>
+                        {field.label} {field.required && <span style={{ color: 'var(--gold)' }}>*</span>}
+                      </label>
+                      <input type={field.type} required={field.required}
+                        value={formData[field.key as keyof typeof formData]}
+                        onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                        style={{ width: '100%', padding: '12px 16px', fontSize: '0.93rem', background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '10px', color: 'white', outline: 'none', transition: 'border-color 0.3s ease', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--gold)'; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'; }}
+                      />
+                    </div>
+                  ))}
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '8px' }}>
-                      お名前 <span style={{ color: 'red' }}>*</span>
+                    <label style={{ display: 'block', fontSize: '0.83rem', fontWeight: '600', color: 'rgba(255,255,255,0.75)', marginBottom: '8px' }}>
+                      お問い合わせ内容 <span style={{ color: 'var(--gold)' }}>*</span>
                     </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        fontSize: '0.95rem',
-                        border: '2px solid rgba(61, 90, 60, 0.2)',
-                        borderRadius: '8px',
-                        outline: 'none',
-                        transition: 'border-color 0.3s ease'
-                      }}
-                      onFocus={(e) => e.currentTarget.style.borderColor = 'var(--forest-green)'}
-                      onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(61, 90, 60, 0.2)'}
+                    <textarea required value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} rows={5}
+                      style={{ width: '100%', padding: '12px 16px', fontSize: '0.93rem', background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '10px', color: 'white', outline: 'none', resize: 'vertical', transition: 'border-color 0.3s ease', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--gold)'; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'; }}
                     />
                   </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '8px' }}>
-                      メールアドレス <span style={{ color: 'red' }}>*</span>
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        fontSize: '0.95rem',
-                        border: '2px solid rgba(61, 90, 60, 0.2)',
-                        borderRadius: '8px',
-                        outline: 'none',
-                        transition: 'border-color 0.3s ease'
-                      }}
-                      onFocus={(e) => e.currentTarget.style.borderColor = 'var(--forest-green)'}
-                      onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(61, 90, 60, 0.2)'}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '8px' }}>
-                      電話番号
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        fontSize: '0.95rem',
-                        border: '2px solid rgba(61, 90, 60, 0.2)',
-                        borderRadius: '8px',
-                        outline: 'none',
-                        transition: 'border-color 0.3s ease'
-                      }}
-                      onFocus={(e) => e.currentTarget.style.borderColor = 'var(--forest-green)'}
-                      onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(61, 90, 60, 0.2)'}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '8px' }}>
-                      お問い合わせ内容 <span style={{ color: 'red' }}>*</span>
-                    </label>
-                    <textarea
-                      required
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      rows={5}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        fontSize: '0.95rem',
-                        border: '2px solid rgba(61, 90, 60, 0.2)',
-                        borderRadius: '8px',
-                        outline: 'none',
-                        transition: 'border-color 0.3s ease',
-                        resize: 'vertical',
-                        fontFamily: 'inherit'
-                      }}
-                      onFocus={(e) => e.currentTarget.style.borderColor = 'var(--forest-green)'}
-                      onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(61, 90, 60, 0.2)'}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    style={{
-                      width: '100%',
-                      padding: '14px',
-                      fontSize: '1.05rem',
-                      fontWeight: '600',
-                      color: 'white',
-                      background: 'var(--gold)',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      marginTop: '6px'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--gold-dark)';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(212, 163, 115, 0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'var(--gold)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  >
-                    送信する
+                  <button type="submit" disabled={formStatus === 'sending'} style={{ padding: '14px', fontSize: '1rem', fontWeight: '700', background: formStatus === 'sending' ? 'rgba(212,163,115,0.5)' : 'var(--gold)', color: 'white', border: 'none', borderRadius: '50px', cursor: formStatus === 'sending' ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'all 0.3s ease', boxShadow: '0 6px 20px rgba(212,163,115,0.4)' }}
+                    onMouseEnter={(e) => { if (formStatus !== 'sending') { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 28px rgba(212,163,115,0.52)'; } }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(212,163,115,0.4)'; }}>
+                    {formStatus === 'sending' ? '送信中...' : '送信する'}
                   </button>
+
+                  {formStatus === 'done' && (
+                    <p style={{ textAlign: 'center', fontSize: '0.9rem', color: 'rgba(212,163,115,0.9)', fontWeight: '600' }}>
+                      ✓ お問い合わせを受け付けました。後ほどご連絡いたします。
+                    </p>
+                  )}
+                  {formStatus === 'error' && (
+                    <p style={{ textAlign: 'center', fontSize: '0.9rem', color: 'rgba(255,120,120,0.9)', fontWeight: '600' }}>
+                      送信に失敗しました。再度お試しいただくか、直接メールにてご連絡ください。
+                    </p>
+                  )}
                 </form>
               </div>
-
-              {/* 連絡先情報 */}
-              <div>
-                <div style={{ background: 'white', padding: '30px', borderRadius: '12px', border: '3px solid var(--forest-green)', marginBottom: '20px' }}>
-                  <h3 style={{ fontSize: '1.5rem', textAlign: 'center', marginBottom: '10px', color: 'var(--forest-green)' }}>川畑 和弘</h3>
-                  <p style={{ textAlign: 'center', fontSize: '1rem', color: 'var(--text-gray)', marginBottom: '20px' }}>Service Hospitality Trainer</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '0.95rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--forest-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <span style={{ fontSize: '1.2rem' }}>📱</span>
-                      </div>
-                      <div>
-                        <span style={{ fontWeight: '500' }}>Mobile: </span>
-                        <a href="tel:090-1035-8186" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>090-1035-8186</a>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--forest-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <span style={{ fontSize: '1.2rem' }}>✉️</span>
-                      </div>
-                      <div>
-                        <span style={{ fontWeight: '500' }}>Mail: </span>
-                        <a href="mailto:info@kawabata-service.com" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>info@kawabata-service.com</a>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '15px' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--forest-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <span style={{ fontSize: '1.2rem' }}>📍</span>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <span style={{ fontWeight: '500' }}>Office: </span>
-                        <span>〒212-0054 神奈川県川崎市幸区小倉2-31-15 Villa Blanche 508</span>
-                      </div>
-                    </div>
-                  </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', justifyContent: 'center' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.6rem', fontWeight: '700', color: 'white', marginBottom: '4px' }}>川畑 和弘</h3>
+                  <p style={{ fontSize: '0.87rem', color: 'rgba(255,255,255,0.55)', letterSpacing: '0.06em' }}>Service Hospitality Trainer</p>
                 </div>
-
-                <div style={{ background: 'rgba(255, 255, 255, 0.7)', padding: '24px', borderRadius: '12px', border: '2px solid var(--gold)', borderLeft: '4px solid var(--forest-green)' }}>
-                  <p style={{ fontSize: '0.95rem', textAlign: 'center', lineHeight: '1.8', color: 'var(--text-dark)' }}>
-                    サービス向上や組織づくりに関するご相談は、どうぞ気軽にお声がけください。<br />
-                    お店に寄り添いながら、より良い未来づくりをお手伝いいたします。
-                  </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {[
+                    { icon: '📱', label: 'Mobile', value: '090-1035-8186', href: 'tel:090-1035-8186' },
+                    { icon: '✉️', label: 'Mail', value: 'info@kawabata-service.com', href: 'mailto:info@kawabata-service.com' },
+                    { icon: '📍', label: 'Office', value: '〒212-0054 神奈川県川崎市幸区小倉2-31-15 Villa Blanche 508', href: null },
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                      <div style={{ width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0, background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>{item.icon}</div>
+                      <div>
+                        <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', marginBottom: '2px', fontWeight: '700', letterSpacing: '0.08em' }}>{item.label}</p>
+                        {item.href
+                          ? <a href={item.href} style={{ fontSize: '0.93rem', color: 'var(--gold)', textDecoration: 'none', fontWeight: '500' }}>{item.value}</a>
+                          : <p style={{ fontSize: '0.87rem', color: 'rgba(255,255,255,0.78)', lineHeight: '1.55' }}>{item.value}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ padding: '22px', background: 'rgba(255,255,255,0.06)', borderRadius: '14px', borderLeft: '3px solid var(--gold)' }}>
+                  <p style={{ fontSize: '0.88rem', lineHeight: '1.85', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>お店に寄り添いながら、より良い未来づくりをお手伝いいたします。</p>
                 </div>
               </div>
             </div>
           </div>
         </section>
       </main>
+
+      {/* ── FOOTER ── */}
+      <footer style={{ background: '#111', padding: '44px 20px', textAlign: 'center' }}>
+        <p style={{ fontSize: '1.05rem', fontWeight: '700', color: 'white', marginBottom: '6px', letterSpacing: '0.06em' }}>川畑 和弘</p>
+        <p style={{ fontSize: '0.72rem', color: 'var(--gold)', marginBottom: '24px', letterSpacing: '0.18em' }}>Service Hospitality Trainer</p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '28px', marginBottom: '28px', flexWrap: 'wrap' }}>
+          {navItems.map((item) => (
+            <button key={item.id} onClick={() => scrollTo(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', fontFamily: 'inherit', transition: 'color 0.2s ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'white'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; }}>
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: '20px' }}>
+          <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.28)' }}>© 2025 川畑 和弘 All rights reserved.</p>
+        </div>
+      </footer>
     </>
   );
 }

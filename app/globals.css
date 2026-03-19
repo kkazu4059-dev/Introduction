@@ -19,22 +19,13 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-snap-type: y mandatory;
-  overflow-y: scroll;
   overflow-x: hidden;
-}
-
-/* モバイル対応：スクロールスナップを無効化 */
-@media (max-width: 767px) {
-  html {
-    scroll-snap-type: none;
-  }
 }
 
 body {
   font-family: 'Noto Sans JP', sans-serif;
   color: var(--text-dark);
-  background: var(--beige);
+  background: white;
   overflow-x: hidden;
 }
 
@@ -43,44 +34,13 @@ a {
   text-decoration: none;
 }
 
-/* スムーズスクロール */
-html {
-  scroll-behavior: smooth;
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.35);
 }
 
-/* カスタムカラーをTailwindで使用可能に */
-.bg-primary {
-  background-color: var(--primary);
-}
-
-.text-primary {
-  color: var(--primary);
-}
-
-.border-primary {
-  border-color: var(--primary);
-}
-
-.hover\:bg-primary-dark:hover {
-  background-color: var(--primary-dark);
-}
-
-.hover\:text-primary:hover {
-  color: var(--primary);
-}
-
-.bg-beige {
-  background-color: var(--beige);
-}
-
-.from-beige {
-  --tw-gradient-from: var(--beige);
-  --tw-gradient-to: rgb(248 245 242 / 0);
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
-}
-
-/* フォーカス時のリング */
-.focus\:ring-primary:focus {
-  --tw-ring-opacity: 1;
-  --tw-ring-color: rgb(212 163 115 / var(--tw-ring-opacity));
+input:-webkit-autofill,
+textarea:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px rgba(61, 90, 60, 0.3) inset;
+  -webkit-text-fill-color: white;
 }
