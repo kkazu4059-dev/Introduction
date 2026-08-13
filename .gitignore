@@ -39,3 +39,10 @@ next-env.d.ts
 .amplify
 amplify_outputs*
 amplifyconfiguration*
+
+# Claude Code ローカル設定
+.claude/
+
+# Windows ダウンロードファイルの ADS メタデータ
+*:Zone.Identifier
+*Zone.Identifier
