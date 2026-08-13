@@ -1,15 +1,7 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Sans_JP } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import ConfigureAmplify from "./components/ConfigureAmplify";
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
-const notoSansJP = Noto_Sans_JP({
-  subsets: ["latin"],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: "川畑和弘 | Service Hospitality Trainer",
@@ -30,7 +22,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className={notoSansJP.className}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>
         <ConfigureAmplify />
         {children}
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ''} />
