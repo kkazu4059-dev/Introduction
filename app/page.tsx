@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '@/amplify/data/resource';
 
@@ -1000,6 +1001,15 @@ export default function Home() {
                   ))}
                 </div>
               </div>
+            </div>
+            <div style={{ textAlign: 'center', marginTop: '48px' }}>
+              <Link href="/cases" style={{
+                display: 'inline-block', padding: '14px 36px', background: 'var(--forest-green)',
+                color: 'white', borderRadius: '50px', fontSize: '0.9rem', fontWeight: '700',
+                textDecoration: 'none',
+              }}>
+                事例を詳しく見る →
+              </Link>
             </div>
           </div>
         </section>
